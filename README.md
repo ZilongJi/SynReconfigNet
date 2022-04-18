@@ -9,6 +9,7 @@ The Network Model for Systematic Reconfiguration of Cortical Microcircuits
 
 ## Short introduction
 The network is composed by rate-based point neurons of excitatory pyramidal cells and inhibitory PV, SST and VIP cells. All neurons are connected randomly with probabilities and strengths constrained by the experimental findings
+![alt text](https://github.com/Lenakeiz/PathIntegrationDataEstimationModelling/blob/main/ReadmeImages/DistributionsAtTheEndOfEachSegment.png "Fitted Distributions at each segment")
 
 ## The network model is described as follows:
 $$
