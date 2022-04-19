@@ -17,7 +17,7 @@ import brainpy as bp
 import numpy as np
 #bp.backend.set('numba', dt=0.1) 
 from NeuronZoo import PCNeuron, PVNeuron, SSTNeuron, VIPNeuron
-from utils import SetConnectivity, bar_plot, violoin_plot
+from utils import SetConnectivity, violoin_plot
 
 def build_model(x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='control'):
     #%%initialize the hyper-parameters  
@@ -31,31 +31,31 @@ def build_model(x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='contr
     NC = np.asarray([num_pc, num_pv, num_sst, num_vip])
     
     #Connection Probability (Data from Li Yao's experiment)
-    Con_Prob = np.array([[0.09,0.80,0.08,0.005],
-                         [0.60,0.65,0.38,0.13],
-                         [0.45,0.22,0.0,0.10],
-                         [0.21,0.24,0.23,0.0]])
+    Con_Prob = np.array([[0.096,0.776,0.08,0.007],
+                         [0.622,0.643,0.317,0.088],
+                         [0.460,0.176,0.000,0.119],
+                         [0.245,0.239,0.237,0.000]])
         
     #Connection Strength (Data from Li Yao's experiment)
     if state == 'control':
-        Con_Stre = np.array([[10., -80., -10., 0.],
-                             [25, -70, -10, -8],
-                             [5, -40, 0, -5],
-                             [10, -25, -10, 0]])
+        Con_Stre = np.array([[8.,  -79.,  -8.,  0.],
+                             [22., -70.,  -12., -14.],
+                             [4.,  -41.,   0.,  -5.],
+                             [10., -35.,  -7.,  0.]])
         #normalize the synaptic strength for stability
         Con_Stre = Con_Stre/80.0 
     elif state == 'md1':
-        Con_Stre = np.array([[10., -80., -10., 0.],
-                             [34, -70, -10, -8],
-                             [5, -40, 0, -5],
-                             [22, -25, -10, 0]])
+        Con_Stre = np.array([[8.,  -79.,  -8.,  0.],
+                             [34., -70.,  -12., -14.],
+                             [4.,  -41.,  0.,   -5.],
+                             [22., -35,   -7.,  0.]])
         #normalize the synaptic strength for stability
         Con_Stre = Con_Stre/80.0
     elif state == 'md4':
-        Con_Stre = np.array([[10., -38., -10., 0.],
-                             [25, -70, -28, -8],
-                             [5, -40, 0, -5],
-                             [10, -25, -18, 0]])
+        Con_Stre = np.array([[8.,  -38.,  -8.,  0.],
+                             [22., -70.,  -28., -14.],
+                             [4.,  -41.,  0.,   -5.],
+                             [10., -35.,  -19,  0.]])
         #normalize the synaptic strength for stability
         Con_Stre = Con_Stre/80.0 
     else:
@@ -130,12 +130,12 @@ def run_trials(n_trials, x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, sta
 def do_stats(cond):
     
     if cond == 'Spont.':
-        n_trials = 3; noise_strength = 5.0 #noise level
+        n_trials = 1; noise_strength = 5.0 #noise level
         x_s = 18.0; x_d = 18.0
         x_i_pv = 1.5; x_i_sst=1.5; x_i_vip=0.5
         print('Modeling Spontaneous...') 
     elif cond == 'Evoked':
-        n_trials = 25; noise_strength = 30.0 #noise level
+        n_trials = 1; noise_strength = 30.0 #noise level
         x_s = 34.0; x_d = 24.0
         x_i_pv = 3.8; x_i_sst=4.8; x_i_vip=1.8
         print('Modeling Evoked...') 
@@ -165,5 +165,5 @@ def do_stats(cond):
                VIP_Samples_md4, cond, celltype='VIP')
 
 if __name__=='__main__':
-    #do_stats(cond = 'Spont.')
-    do_stats(cond = 'Evoked')
+    do_stats(cond = 'Spont.')
+    #do_stats(cond = 'Evoked')
