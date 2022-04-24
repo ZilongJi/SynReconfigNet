@@ -19,6 +19,8 @@ import numpy as np
 from NeuronZoo import PCNeuron, PVNeuron, SSTNeuron, VIPNeuron
 from utils import SetConnectivity, violoin_plot
 
+bp.base.clear_name_cache()
+ 
 def build_model(x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='control'):
     #%%initialize the hyper-parameters  
     num_pc = 700; num_pv = 100; num_sst = 100; num_vip = 100
@@ -77,16 +79,17 @@ def build_model(x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='contr
         = Weights['vip_pc'], Weights['vip_pv'], Weights['vip_sst'], Weights['vip_vip']
 
     #%% initialize the neuron class and build the network
-    pcs = PCNeuron(num_pc, tau_pc, noise_strength, lambda_s, lambda_d, x_s, x_d, c, theta_s, 
-                   theta_c, W_pc_pv, W_pc_pc, W_pc_sst, monitors=['r_pc', 'I_0'])
-    pvs = PVNeuron(num_pv, tau_pv, noise_strength, x_i_pv, W_pv_pc, W_pv_pv, W_pv_sst, W_pv_vip,
-                   monitors=['r_pv'])   
+    pcs = PCNeuron(num_pc, tau_pc, noise_strength, lambda_s, lambda_d, 
+                   x_s, x_d, c, theta_s, theta_c, 
+                   W_pc_pv, W_pc_pc, W_pc_sst)   #monitors=['r_pc', 'I_0']
+    pvs = PVNeuron(num_pv, tau_pv, noise_strength, x_i_pv, 
+                   W_pv_pc, W_pv_pv, W_pv_sst, W_pv_vip)   #monitors=['r_pv'] 
     
-    ssts = SSTNeuron(num_sst, tau_sst, noise_strength, x_i_sst, W_sst_pc, W_sst_pv, W_sst_sst, 
-                     W_sst_vip, monitors=['r_sst'])
+    ssts = SSTNeuron(num_sst, tau_sst, noise_strength, x_i_sst, 
+                     W_sst_pc, W_sst_pv, W_sst_sst, W_sst_vip)  #monitors=['r_sst']
     
-    vips = VIPNeuron(num_vip, tau_vip, noise_strength, x_i_vip, W_vip_pc, W_vip_pv, W_vip_sst, 
-                     W_vip_vip, monitors=['r_vip']) 
+    vips = VIPNeuron(num_vip, tau_vip, noise_strength, x_i_vip, 
+                     W_vip_pc, W_vip_pv, W_vip_sst, W_vip_vip)  #monitors=['r_vip']
     
     pcs.PV = pvs; pcs.SST = ssts 
     pvs.PC = pcs; pvs.SST = ssts; pvs.VIP = vips
@@ -94,7 +97,7 @@ def build_model(x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='contr
     vips.PC = pcs; vips.PV = pvs; vips.SST = ssts
     
     #build the network
-    micro_net = bp.Network(pcs, pvs, ssts, vips)
+    micro_net = bp.dyn.Network(pcs, pvs, ssts, vips)
     
     return micro_net, pcs, pvs, ssts, vips
 
@@ -107,7 +110,10 @@ def run_trials(n_trials, x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, sta
                                                       x_i_vip, noise_strength, state)  
         #reset the firing rates of different cell types
         pcs.r_pc[:] = 0.; pvs.r_pv[:] = 0.; ssts.r_sst[:] = 0.; vips.r_vip[:] = 0.  
-        micro_net.run(1000, report=False)
+        runner = bp.dyn.DSRunner(micro_net, 
+                                 monitors=['PC.r_pc', 'PC.I_0', 'PV.r_pv', 'SST.r_sst', 'VIP.r_vip'], 
+                                 dt=0.1)
+        runner.run(duration=1000)
         
         #for each trial, random sampling 5 neurons
         idx = np.random.choice(700, 1, replace=False)
