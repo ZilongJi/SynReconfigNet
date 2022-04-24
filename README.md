@@ -3,7 +3,7 @@ The Network Model for Systematic Reconfiguration of Cortical Microcircuits
 
 ## Required packages and dependencies
 Implemented using Python 3.8 but later versions should work as well
-The folllowing packages are also required
+The folllowing packages are also required <br />
 1, brainpy: https://github.com/PKU-NIP-Lab/BrainPy <br />
 2, jaxlib: see brainy installation instructions <br />
 3, pandas <br />
