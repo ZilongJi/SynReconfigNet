@@ -20,7 +20,8 @@ from NeuronZoo import PCNeuron, PVNeuron, SSTNeuron, VIPNeuron
 from utils import SetConnectivity, violoin_plot
 
 bp.base.clear_name_cache()
- 
+bp.math.set_platform('cpu')
+
 def build_model(x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='control'):
     #%%initialize the hyper-parameters  
     num_pc = 700; num_pv = 100; num_sst = 100; num_vip = 100
