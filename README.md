@@ -13,7 +13,7 @@ The folllowing packages are also required <br />
 
 ### Synaptic connection probability and strength
 The network is composed by rate-based point neurons of excitatory pyramidal cells and inhibitory PV, SST and VIP cells. All neurons are connected randomly with probabilities and strengths constrained by the experimental findings:
-<img src="https://github.com/ZilongJi/SynReconfigNet/blob/main/ReadmeImages/ProbAndStrength.jpg" width=80% height=80%>
+<img src="https://github.com/ZilongJi/SynReconfigNet/blob/main/ReadmeImages/ProbAndStrength.jpg" width=70% height=70%>
 
 ### The network model:
-<img src="https://github.com/ZilongJi/SynReconfigNet/blob/main/ReadmeImages/equations.jpg" width=80% height=80%>
+<img src="https://github.com/ZilongJi/SynReconfigNet/blob/main/ReadmeImages/equations.jpg" width=70% height=70%>
