@@ -49,7 +49,8 @@ class PCNeuron(bp.dyn.NeuGroup):
         
     def derivative(self, r_pc, t, I_total):    
         I_total_thres = I_total - self.theta_s
-        I_total_thres[I_total_thres < 0] = 0
+        I_total_thres = bm.where(I_total_thres < 0, 0, I_total_thres)
+        # I_total_thres[I_total_thres < 0] = 0
         dr_pc = 1. / self.tau * (-r_pc + I_total_thres)
         return dr_pc
     
@@ -67,23 +68,25 @@ class PCNeuron(bp.dyn.NeuGroup):
         #using numba to speed up, we can't use np.heavisde here. We will update 
         #brainpy to support this in the future
         I_0_thres = I_0-self.theta_c
-        I_0_thres[I_0_thres<=0] = 0
-        I_0_thres[I_0_thres>0] = 1 # dendritic calcium event
+        I_0_thres = bm.where(I_0_thres<=0, 0, 1)
+        # I_0_thres[I_0_thres<=0] = 0
+        # I_0_thres[I_0_thres>0] = 1 # dendritic calcium event
         #dendritic spike current
         I_D0 = self.c*I_0_thres
         
         #4, calculate the total input coming from the dendrites, should be non-negative
         d_current = I_D + I_D0
-        d_current[d_current<0] = 0
-        
+        d_current = bm.where(d_current < 0, 0, d_current)
+        # d_current[d_current<0] = 0
+
         #5, calculate the total input to the soma from generating firing rate
         
         I_total = (1-self.lambda_s)*I_S + self.lambda_d*d_current \
             + self.noise_strength*self.rng.randn(self.num)
         
         self.I_S.value  = I_S
-        self.I_D.value  = I_D 
-        self.I_D0.value = I_D0
+        self.I_D[:]  = I_D
+        self.I_D0[:] = I_D0
         self.I_0.value  = I_0
         
         self.r_pc.value = self.integral(self.r_pc, _t, I_total, _dt)
@@ -135,8 +138,9 @@ class PVNeuron(bp.dyn.NeuGroup):
         
         r_pv        =   self.integral(self.r_pv, _t, I_total, _dt)
         
-        r_pv[r_pv<0] = 0
-        
+        r_pv = bm.where(r_pv < 0, 0, r_pv)
+        # r_pv[r_pv<0] = 0
+
         self.r_pv.value = r_pv
         
 class SSTNeuron(bp.dyn.NeuGroup):
@@ -186,8 +190,9 @@ class SSTNeuron(bp.dyn.NeuGroup):
         
         r_sst       =   self.integral(self.r_sst, _t, I_total, _dt)
         
-        r_sst[r_sst<0] = 0
-        
+        r_sst = bm.where(r_sst < 0, 0, r_sst)
+        # r_sst[r_sst<0] = 0
+
         self.r_sst.value = r_sst
         
 class VIPNeuron(bp.dyn.NeuGroup):
@@ -237,6 +242,7 @@ class VIPNeuron(bp.dyn.NeuGroup):
         
         r_vip = self.integral(self.r_vip, _t, I_total, _dt)
         
-        r_vip[r_vip<0] = 0
-        
+        r_vip = bm.where(r_vip<0, 0, r_vip)
+        # r_vip[r_vip<0] = 0
+
         self.r_vip.value = r_vip

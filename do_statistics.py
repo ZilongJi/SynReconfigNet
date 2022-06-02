@@ -15,7 +15,6 @@ Acknowledgement: Brainpy developer: Chaoming Wang
 """
 import brainpy as bp
 import numpy as np
-#bp.backend.set('numba', dt=0.1) 
 from NeuronZoo import PCNeuron, PVNeuron, SSTNeuron, VIPNeuron
 from utils import SetConnectivity, violoin_plot
 
@@ -112,22 +111,27 @@ def run_trials(n_trials, x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, sta
         #reset the firing rates of different cell types
         pcs.r_pc[:] = 0.; pvs.r_pv[:] = 0.; ssts.r_sst[:] = 0.; vips.r_vip[:] = 0.  
         runner = bp.dyn.DSRunner(micro_net, 
-                                 monitors=['PC.r_pc', 'PC.I_0', 'PV.r_pv', 'SST.r_sst', 'VIP.r_vip'], 
+                                 monitors=['PC.r_pc', 'PC.I_0',
+                                           'PV.r_pv', 'SST.r_sst',
+                                           'VIP.r_vip'],
                                  dt=0.1)
         runner.run(duration=1000)
         
         #for each trial, random sampling 5 neurons
         idx = np.random.choice(700, 1, replace=False)
-        pc_samples = pcs.mon.r_pc[-1,idx]; PC_Sam.append(pc_samples)
+        pc_samples = runner.mon['PC.r_pc'][-1,idx]; PC_Sam.append(pc_samples)
         
         idx = np.random.choice(100, 1, replace=False)
-        pv_samples = pvs.mon.r_pv[-1,idx]; PV_Sam.append(pv_samples)
-        
+        pv_samples = runner.mon['PV.r_pv'][-1,idx]; PV_Sam.append(pv_samples)
+        # pv_samples = pvs.mon.r_pv[-1,idx]; PV_Sam.append(pv_samples)
+
         idx = np.random.choice(100, 1, replace=False)
-        sst_samples = ssts.mon.r_sst[-1,idx]; SST_Sam.append(sst_samples)
-        
+        sst_samples = runner.mon['SST.r_sst'][-1,idx]; SST_Sam.append(sst_samples)
+        # sst_samples = ssts.mon.r_sst[-1,idx]; SST_Sam.append(sst_samples)
+
         idx = np.random.choice(100, 1, replace=False)
-        vip_samples = vips.mon.r_vip[-1,idx]; VIP_Sam.append(vip_samples)
+        vip_samples = runner.mon['VIP.r_vip'][-1,idx]; VIP_Sam.append(vip_samples)
+        # vip_samples = vips.mon.r_vip[-1,idx]; VIP_Sam.append(vip_samples)
 
     PC_Samples = np.concatenate(PC_Sam); PV_Samples = np.concatenate(PV_Sam)
     SST_Samples= np.concatenate(SST_Sam); VIP_Samples = np.concatenate(VIP_Sam)
@@ -137,7 +141,7 @@ def run_trials(n_trials, x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, sta
 def do_stats(cond):
     
     if cond == 'Spont.':
-        n_trials = 1; noise_strength = 5.0 #noise level
+        n_trials = 5; noise_strength = 5.0 #noise level
         x_s = 18.0; x_d = 18.0
         x_i_pv = 1.5; x_i_sst=1.5; x_i_vip=0.5
         print('Modeling Spontaneous...') 
@@ -151,10 +155,13 @@ def do_stats(cond):
         
     PC_Samples_ctrl1, PV_Samples_ctrl1, SST_Samples_ctrl1, VIP_Samples_ctrl1 \
         = run_trials(n_trials, x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='control')
+    bp.base.clear_name_cache()
     PC_Samples_md1, PV_Samples_md1, SST_Samples_md1, VIP_Samples_md1 \
         = run_trials(n_trials, x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='md1')
+    bp.base.clear_name_cache()
     PC_Samples_ctrl2, PV_Samples_ctrl2, SST_Samples_ctrl2, VIP_Samples_ctrl2 \
         = run_trials(n_trials, x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='control')
+    bp.base.clear_name_cache()
     PC_Samples_md4, PV_Samples_md4, SST_Samples_md4, VIP_Samples_md4 \
         = run_trials(n_trials, x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='md4')
     
