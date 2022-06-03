@@ -18,7 +18,6 @@ import numpy as np
 from NeuronZoo import PCNeuron, PVNeuron, SSTNeuron, VIPNeuron
 from utils import SetConnectivity, violoin_plot
 
-bp.base.clear_name_cache()
 bp.math.set_platform('cpu')
 
 def build_model(x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='control'):
@@ -31,35 +30,48 @@ def build_model(x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='contr
     
     #total number of neurons (nparray)
     NC = np.asarray([num_pc, num_pv, num_sst, num_vip])
-    
-    #Connection Probability (Data from Li Yao's experiment)
-    Con_Prob = np.array([[0.096,0.776,0.08,0.007],
-                         [0.622,0.643,0.317,0.088],
-                         [0.460,0.176,0.000,0.119],
-                         [0.245,0.239,0.237,0.000]])
         
     #Connection Strength (Data from Li Yao's experiment)
     if state == 'control':
+        #Connection Probability (Data from Li Yao's experiment)
+        Con_Prob = np.array([[0.096,0.776,0.08,0.007],
+                             [0.622,0.643,0.317,0.088],
+                             [0.460,0.176,0.000,0.119],
+                             [0.245,0.239,0.237,0.000]])        
+        
         Con_Stre = np.array([[8.,  -79.,  -8.,  0.],
                              [22., -70.,  -12., -14.],
                              [4.,  -41.,   0.,  -5.],
                              [10., -35.,  -7.,  0.]])
         #normalize the synaptic strength for stability
-        Con_Stre = Con_Stre/80.0 
+        Con_Stre = Con_Stre/79.0 
     elif state == 'md1':
+        #Connection Probability (Data from Li Yao's experiment)
+        Con_Prob = np.array([[0.096,0.905,0.08,0.007],
+                             [0.622,0.643,0.317,0.088],
+                             [0.460,0.176,0.000,0.119],
+                             [0.245,0.239,0.237,0.000]])     
+        
         Con_Stre = np.array([[8.,  -79.,  -8.,  0.],
                              [34., -70.,  -12., -14.],
                              [4.,  -41.,  0.,   -5.],
                              [22., -35,   -7.,  0.]])
         #normalize the synaptic strength for stability
-        Con_Stre = Con_Stre/80.0
+        Con_Stre = Con_Stre/79.0
     elif state == 'md4':
+        x_s = 10.0 # bottom up input decreased with MD 4 days
+        #Connection Probability (Data from Li Yao's experiment)
+        Con_Prob = np.array([[0.096,0.776,0.08,0.007],
+                             [0.622,0.426,0.533,0.088],
+                             [0.460,0.367,0.000,0.119],
+                             [0.245,0.239,0.237,0.000]])    
+        
         Con_Stre = np.array([[8.,  -38.,  -8.,  0.],
                              [22., -70.,  -28., -14.],
                              [4.,  -41.,  0.,   -5.],
                              [10., -35.,  -19,  0.]])
         #normalize the synaptic strength for stability
-        Con_Stre = Con_Stre/80.0 
+        Con_Stre = Con_Stre/79.0
     else:
         raise ValueError("Wrong State Name, Check It.")
 
@@ -105,6 +117,7 @@ def build_model(x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='contr
 def run_trials(n_trials, x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state):
     PC_Sam = []; PV_Sam = []; SST_Sam=[]; VIP_Sam=[]
     for i in range(n_trials):
+        bp.base.clear_name_cache()
         print('simulating trail {:.0f}'.format(i)) 
         micro_net, pcs, pvs, ssts, vips = build_model(x_s, x_d, x_i_pv, x_i_sst, 
                                                       x_i_vip, noise_strength, state)  
@@ -141,27 +154,24 @@ def run_trials(n_trials, x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, sta
 def do_stats(cond):
     
     if cond == 'Spont.':
-        n_trials = 5; noise_strength = 5.0 #noise level
-        x_s = 18.0; x_d = 18.0
-        x_i_pv = 1.5; x_i_sst=1.5; x_i_vip=0.5
+        n_trials = 1; noise_strength = 0.5 #noise level
+        x_s = 10.0; x_d = 10.0
+        x_i_pv = 6; x_i_sst=1.2; x_i_vip=4.2
         print('Modeling Spontaneous...') 
     elif cond == 'Evoked':
-        n_trials = 1; noise_strength = 30.0 #noise level
+        n_trials = 10; noise_strength = 5.0 #noise level
         x_s = 34.0; x_d = 24.0
-        x_i_pv = 3.8; x_i_sst=4.8; x_i_vip=1.8
+        x_i_pv = 12; x_i_sst=4.8; x_i_vip=1.8
         print('Modeling Evoked...') 
     else:
         raise ValueError("Wrong Condition Name, Check It.")
         
     PC_Samples_ctrl1, PV_Samples_ctrl1, SST_Samples_ctrl1, VIP_Samples_ctrl1 \
         = run_trials(n_trials, x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='control')
-    bp.base.clear_name_cache()
     PC_Samples_md1, PV_Samples_md1, SST_Samples_md1, VIP_Samples_md1 \
         = run_trials(n_trials, x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='md1')
-    bp.base.clear_name_cache()
     PC_Samples_ctrl2, PV_Samples_ctrl2, SST_Samples_ctrl2, VIP_Samples_ctrl2 \
         = run_trials(n_trials, x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='control')
-    bp.base.clear_name_cache()
     PC_Samples_md4, PV_Samples_md4, SST_Samples_md4, VIP_Samples_md4 \
         = run_trials(n_trials, x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='md4')
     
