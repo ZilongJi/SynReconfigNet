@@ -10,11 +10,13 @@ import brainpy.math as bm
 
 class PCNeuron(bp.dyn.NeuGroup):
     def __init__(self, size, tau, noise_strength, lambda_s, lambda_d, x_s, x_d, c, 
-                 theta_s, theta_c, W_pc_pv, W_pc_pc, W_pc_sst, **kwargs):
+                 rmax, r0, theta_c, W_pc_pv, W_pc_pc, W_pc_sst, **kwargs):
         
         super(PCNeuron, self).__init__(size, name='PC', **kwargs) 
         
         #parameters
+        self.rmax           =   rmax
+        self.r0             =   r0
         self.tau            =   tau             # the rate time constant for PC neuron
         self.noise_strength =   noise_strength  # noise strength add to each neuron
         self.lambda_s       =   lambda_s        # the percentage of currents leadking away from soma
@@ -22,7 +24,6 @@ class PCNeuron(bp.dyn.NeuGroup):
         self.x_s            =   x_s             # bottom-up input to the pc
         self.x_d            =   x_d             # top-down input to the pc
         self.c              =   c               # scales the amount of current from dendritic calcium spike
-        self.theta_s        =   theta_s         # the rheobase of the PC
         self.theta_c        =   theta_c         # he threshold for the minimal input needed to produce a Ca2+ - spike
         
         self.W_pc_pv        =   W_pc_pv         # the synaptic connection from PVs to PCs (preferably inhibit the perisomatic and the basal dendrites of PCs)
@@ -48,10 +49,11 @@ class PCNeuron(bp.dyn.NeuGroup):
         
         
     def derivative(self, r_pc, t, I_total):    
-        I_total_thres = I_total - self.theta_s
-        I_total_thres = bm.where(I_total_thres < 0, 0, I_total_thres)
+        #tanh activation
+        r_ = (self.rmax-self.r0)*bm.tanh(I_total/(self.rmax-self.r0))
+        r_ = bm.where(r_ < 0, 0, r_)
         # I_total_thres[I_total_thres < 0] = 0
-        dr_pc = 1. / self.tau * (-r_pc + I_total_thres)
+        dr_pc = 1. / self.tau * (-r_pc + r_)
         return dr_pc
     
     def update(self, _t, _dt):
@@ -93,11 +95,13 @@ class PCNeuron(bp.dyn.NeuGroup):
         
 class PVNeuron(bp.dyn.NeuGroup):
     
-    def __init__(self, size, tau, noise_strength, x_i, W_pv_pc, W_pv_pv, W_pv_sst, W_pv_vip, **kwargs):    
+    def __init__(self, size, tau, noise_strength, x_i, rmax, r0, W_pv_pc, W_pv_pv, W_pv_sst, W_pv_vip, **kwargs):    
         
         super(PVNeuron, self).__init__(size, name='PV', **kwargs)
         
         #parameters
+        self.rmax           =   rmax
+        self.r0             =   r0
         self.tau            =   tau               # the GABAa time constant for PVs
         self.noise_strength =   noise_strength    # noise strength add to each neuron
         self.x_i            =   x_i               # external input to PVs
@@ -114,15 +118,18 @@ class PVNeuron(bp.dyn.NeuGroup):
         self.PC     =   None
         self.SST    =   None
         self.VIP    =   None
-        
+        '''
         self.integral = bp.odeint(lambda r_pv, t,  I: 1./self.tau*(-r_pv + self.x_i + I),
                                   method='exp_auto')
-    
-    '''
+        '''
+        self.integral = bp.odeint(self.derivative, method='exp_auto')
+
     def derivative(self, r_pv, t, I_total):
-        dr_pv = 1./self.tau*(-r_pv + self.x_i + I_total)
+        #tanh activation
+        r_ = (self.rmax-self.r0)*bm.tanh(I_total/(self.rmax-self.r0))
+        r_ = bm.where(r_ < 0, 0, r_)
+        dr_pv = 1./self.tau*(-r_pv + r_)
         return dr_pv
-    '''
 
     
     def update(self, _t, _dt):
@@ -133,7 +140,7 @@ class PVNeuron(bp.dyn.NeuGroup):
         sst_input   =   bm.dot(self.W_pv_sst, self.SST.r_sst)
         vip_input   =   bm.dot(self.W_pv_vip, self.VIP.r_vip)
         
-        I_total     =   pc_input + pv_input + sst_input + vip_input \
+        I_total     =   self.x_i + pc_input + pv_input + sst_input + vip_input \
                         + self.noise_strength*self.rng.randn(self.num)
         
         r_pv        =   self.integral(self.r_pv, _t, I_total, _dt)
@@ -145,12 +152,14 @@ class PVNeuron(bp.dyn.NeuGroup):
         
 class SSTNeuron(bp.dyn.NeuGroup):
     
-    def __init__(self, size, tau, noise_strength, x_i, W_sst_pc, W_sst_pv, W_sst_sst, 
+    def __init__(self, size, tau, noise_strength, x_i, rmax, r0, W_sst_pc, W_sst_pv, W_sst_sst, 
                  W_sst_vip, **kwargs):
 
         super(SSTNeuron, self).__init__(size, name='SST', **kwargs)
         
         #parameters
+        self.rmax           =   rmax
+        self.r0             =   r0
         self.tau            =   tau                 # the GABAa time constant for SSTs
         self.noise_strength =   noise_strength      # noise strength add to each neuron
         self.x_i            =   x_i                 # external input to SSTs
@@ -167,15 +176,18 @@ class SSTNeuron(bp.dyn.NeuGroup):
         self.PC     =   None
         self.PV     =   None
         self.VIP    =   None
-            
+        '''
         self.integral = bp.odeint(lambda r_sst, t,  I: 1./self.tau*(-r_sst + self.x_i + I),
                                   method='exp_auto')
-    
-    '''
-    def derivative(self.r_sst, t, I_total):
-        dr_sst = 1./self.tau*(-r_sst + self.x_i + I_total)
+        '''
+        self.integral = bp.odeint(self.derivative, method='exp_auto')
+
+    def derivative(self, r_sst, t, I_total):
+        #tanh activation
+        r_ = (self.rmax-self.r0)*bm.tanh(I_total/(self.rmax-self.r0))
+        r_ = bm.where(r_ < 0, 0, r_)
+        dr_sst = 1./self.tau*(-r_sst + r_)
         return dr_sst
-    '''
     
     def update(self, _t, _dt):
         
@@ -185,7 +197,7 @@ class SSTNeuron(bp.dyn.NeuGroup):
         sst_input   =   bm.dot(self.W_sst_sst, self.r_sst)
         vip_input   =   bm.dot(self.W_sst_vip, self.VIP.r_vip)        
         
-        I_total     =   pc_input + pv_input + sst_input + vip_input \
+        I_total     =   self.x_i + pc_input + pv_input + sst_input + vip_input \
                         + self.noise_strength*self.rng.randn(self.num)
         
         r_sst       =   self.integral(self.r_sst, _t, I_total, _dt)
@@ -197,11 +209,13 @@ class SSTNeuron(bp.dyn.NeuGroup):
         
 class VIPNeuron(bp.dyn.NeuGroup):
     
-    def __init__(self, size, tau, noise_strength, x_i, W_vip_pc, W_vip_pv, W_vip_sst, W_vip_vip, **kwargs):
+    def __init__(self, size, tau, noise_strength, x_i, rmax, r0, W_vip_pc, W_vip_pv, W_vip_sst, W_vip_vip, **kwargs):
 
         super(VIPNeuron, self).__init__(size, name='VIP', **kwargs)
         
         #parameters
+        self.rmax           =   rmax
+        self.r0             =   r0
         self.tau            =   tau                 # the GABAa time constant for VIPs
         self.noise_strength =   noise_strength      # noise strength add to each neuron
         self.x_i            =   x_i                 # external input to VIPs
@@ -219,10 +233,19 @@ class VIPNeuron(bp.dyn.NeuGroup):
         self.PV     =   None
         self.SST    =   None
         
+        '''
         self.integral = bp.odeint(lambda r_vip, t,  I: 1./self.tau*(-r_vip + self.x_i + I),
                                   method='exp_auto')
+        '''
+        self.integral = bp.odeint(self.derivative, method='exp_auto')
 
-
+    def derivative(self, r_vip, t, I_total):
+        #tanh activation
+        r_ = (self.rmax-self.r0)*bm.tanh(I_total/(self.rmax-self.r0))
+        r_ = bm.where(r_ < 0, 0, r_)
+        dr_vip = 1./self.tau*(-r_vip + r_)
+        return dr_vip
+    
         '''
         def derivative(self.r_vip, t, I_total):
             dr_vip = 1./self.tau*(-r_vip + self.x_i + I_total)
@@ -237,7 +260,7 @@ class VIPNeuron(bp.dyn.NeuGroup):
         sst_input   =   bm.dot(self.W_vip_sst, self.SST.r_sst)
         vip_input   =   bm.dot(self.W_vip_vip, self.r_vip)   
         
-        I_total     =   pc_input + pv_input + sst_input + vip_input \
+        I_total     =   self.x_i + pc_input + pv_input + sst_input + vip_input \
                         + self.noise_strength*self.rng.randn(self.num)
         
         r_vip = self.integral(self.r_vip, _t, I_total, _dt)

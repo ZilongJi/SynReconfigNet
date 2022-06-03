@@ -26,7 +26,7 @@ def build_model(x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='contr
     tau_pc = 10; tau_pv = 10; tau_sst = 10; tau_vip = 10
     lambda_s = 0.31; lambda_d = 0.27
     c = 7; theta_c = 28
-    theta_s = 14
+    rmax = 5; r0 = 1
     
     #total number of neurons (nparray)
     NC = np.asarray([num_pc, num_pv, num_sst, num_vip])
@@ -93,15 +93,15 @@ def build_model(x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='contr
 
     #%% initialize the neuron class and build the network
     pcs = PCNeuron(num_pc, tau_pc, noise_strength, lambda_s, lambda_d, 
-                   x_s, x_d, c, theta_s, theta_c, 
+                   x_s, x_d, c, rmax, r0, theta_c, 
                    W_pc_pv, W_pc_pc, W_pc_sst)   #monitors=['r_pc', 'I_0']
-    pvs = PVNeuron(num_pv, tau_pv, noise_strength, x_i_pv, 
+    pvs = PVNeuron(num_pv, tau_pv, noise_strength, x_i_pv, rmax, r0,
                    W_pv_pc, W_pv_pv, W_pv_sst, W_pv_vip)   #monitors=['r_pv'] 
     
-    ssts = SSTNeuron(num_sst, tau_sst, noise_strength, x_i_sst, 
+    ssts = SSTNeuron(num_sst, tau_sst, noise_strength, x_i_sst, rmax, r0,
                      W_sst_pc, W_sst_pv, W_sst_sst, W_sst_vip)  #monitors=['r_sst']
     
-    vips = VIPNeuron(num_vip, tau_vip, noise_strength, x_i_vip, 
+    vips = VIPNeuron(num_vip, tau_vip, noise_strength, x_i_vip, rmax, r0,
                      W_vip_pc, W_vip_pv, W_vip_sst, W_vip_vip)  #monitors=['r_vip']
     
     pcs.PV = pvs; pcs.SST = ssts 
@@ -155,9 +155,9 @@ def run_trials(n_trials, x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, sta
 def do_stats(cond):
     
     if cond == 'Spont.':
-        n_trials = 20; noise_strength = 3. #noise level
-        x_s = 14; x_d = 14
-        x_i_pv = 4; x_i_sst=3; x_i_vip=2
+        n_trials = 1; noise_strength = 0. #noise level
+        x_s = 2; x_d = 2
+        x_i_pv = 4; x_i_sst=2; x_i_vip=2
         print('Modeling Spontaneous...') 
     elif cond == 'Evoked':
         n_trials = 1; noise_strength = 0. #noise level
@@ -190,5 +190,5 @@ def do_stats(cond):
                VIP_Samples_md4, cond, celltype='VIP')
 
 if __name__=='__main__':
-    #do_stats(cond = 'Spont.')
-    do_stats(cond = 'Evoked')
+    do_stats(cond = 'Spont.')
+    #do_stats(cond = 'Evoked')
