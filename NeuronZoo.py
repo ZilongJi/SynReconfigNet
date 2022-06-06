@@ -10,7 +10,7 @@ import brainpy.math as bm
 
 class PCNeuron(bp.dyn.NeuGroup):
     def __init__(self, size, tau, noise_strength, lambda_s, lambda_d, x_s, x_d, c, 
-                 theta_s, theta_c, W_pc_pv, W_pc_pc, W_pc_sst, **kwargs):
+                 theta_s, theta_c, W_pc_pv, W_pc_pc, W_pc_sst, seed, **kwargs):
         
         super(PCNeuron, self).__init__(size, name='PC', **kwargs) 
         
@@ -38,7 +38,7 @@ class PCNeuron(bp.dyn.NeuGroup):
         self.I_D    =   bm.Variable(bm.zeros(self.num)) # total synaptic input to dendrite
         self.I_0    =   bm.Variable(bm.zeros(self.num)) # current at the dendrite for generating dendritic spike
         self.I_D0   =   bm.Variable(bm.zeros(self.num))# total synaptically  generated input in the dendrites
-        self.rng    =   bm.random.RandomState()
+        self.rng    =   bm.random.RandomState(seed)
         
         #other classes
         self.PV     =   None
@@ -93,7 +93,7 @@ class PCNeuron(bp.dyn.NeuGroup):
         
 class PVNeuron(bp.dyn.NeuGroup):
     
-    def __init__(self, size, tau, noise_strength, x_i, W_pv_pc, W_pv_pv, W_pv_sst, W_pv_vip, **kwargs):    
+    def __init__(self, size, tau, noise_strength, x_i, W_pv_pc, W_pv_pv, W_pv_sst, W_pv_vip, seed, **kwargs):    
         
         super(PVNeuron, self).__init__(size, name='PV', **kwargs)
         
@@ -108,14 +108,14 @@ class PVNeuron(bp.dyn.NeuGroup):
         
         #variables
         self.r_pv   =   bm.Variable(bm.zeros(self.num))
-        self.rng    =   bm.random.RandomState()
+        self.rng    =   bm.random.RandomState(seed)
         
         #other classes
         self.PC     =   None
         self.SST    =   None
         self.VIP    =   None
         
-        self.integral = bp.odeint(lambda r_pv, t,  I: 1./self.tau*(-r_pv + self.x_i + I),
+        self.integral = bp.odeint(lambda r_pv, t,  I: 1./self.tau*(-r_pv + I),
                                   method='exp_auto')
     
     '''
@@ -133,7 +133,7 @@ class PVNeuron(bp.dyn.NeuGroup):
         sst_input   =   bm.dot(self.W_pv_sst, self.SST.r_sst)
         vip_input   =   bm.dot(self.W_pv_vip, self.VIP.r_vip)
         
-        I_total     =   pc_input + pv_input + sst_input + vip_input \
+        I_total     =   self.x_i + pc_input + pv_input + sst_input + vip_input \
                         + self.noise_strength*self.rng.randn(self.num)
         
         r_pv        =   self.integral(self.r_pv, _t, I_total, _dt)
@@ -146,7 +146,7 @@ class PVNeuron(bp.dyn.NeuGroup):
 class SSTNeuron(bp.dyn.NeuGroup):
     
     def __init__(self, size, tau, noise_strength, x_i, W_sst_pc, W_sst_pv, W_sst_sst, 
-                 W_sst_vip, **kwargs):
+                 W_sst_vip, seed, **kwargs):
 
         super(SSTNeuron, self).__init__(size, name='SST', **kwargs)
         
@@ -161,14 +161,14 @@ class SSTNeuron(bp.dyn.NeuGroup):
 
         #variables
         self.r_sst  =   bm.Variable(bm.zeros(self.num))
-        self.rng    =   bm.random.RandomState()
+        self.rng    =   bm.random.RandomState(seed)
         
         #other classes
         self.PC     =   None
         self.PV     =   None
         self.VIP    =   None
             
-        self.integral = bp.odeint(lambda r_sst, t,  I: 1./self.tau*(-r_sst + self.x_i + I),
+        self.integral = bp.odeint(lambda r_sst, t,  I: 1./self.tau*(-r_sst + I),
                                   method='exp_auto')
     
     '''
@@ -185,19 +185,18 @@ class SSTNeuron(bp.dyn.NeuGroup):
         sst_input   =   bm.dot(self.W_sst_sst, self.r_sst)
         vip_input   =   bm.dot(self.W_sst_vip, self.VIP.r_vip)        
         
-        I_total     =   pc_input + pv_input + sst_input + vip_input \
+        I_total     =   self.x_i + pc_input + pv_input + sst_input + vip_input \
                         + self.noise_strength*self.rng.randn(self.num)
         
         r_sst       =   self.integral(self.r_sst, _t, I_total, _dt)
         
         r_sst = bm.where(r_sst < 0, 0, r_sst)
-        # r_sst[r_sst<0] = 0
 
         self.r_sst.value = r_sst
         
 class VIPNeuron(bp.dyn.NeuGroup):
     
-    def __init__(self, size, tau, noise_strength, x_i, W_vip_pc, W_vip_pv, W_vip_sst, W_vip_vip, **kwargs):
+    def __init__(self, size, tau, noise_strength, x_i, W_vip_pc, W_vip_pv, W_vip_sst, W_vip_vip, seed, **kwargs):
 
         super(VIPNeuron, self).__init__(size, name='VIP', **kwargs)
         
@@ -212,14 +211,14 @@ class VIPNeuron(bp.dyn.NeuGroup):
         
         #variables
         self.r_vip  =   bm.Variable(bm.zeros(self.num))
-        self.rng    =   bm.random.RandomState()
+        self.rng    =   bm.random.RandomState(seed)
         
         #other classes
         self.PC     =   None
         self.PV     =   None
         self.SST    =   None
         
-        self.integral = bp.odeint(lambda r_vip, t,  I: 1./self.tau*(-r_vip + self.x_i + I),
+        self.integral = bp.odeint(lambda r_vip, t,  I: 1./self.tau*(-r_vip + I),
                                   method='exp_auto')
 
 
@@ -237,12 +236,11 @@ class VIPNeuron(bp.dyn.NeuGroup):
         sst_input   =   bm.dot(self.W_vip_sst, self.SST.r_sst)
         vip_input   =   bm.dot(self.W_vip_vip, self.r_vip)   
         
-        I_total     =   pc_input + pv_input + sst_input + vip_input \
+        I_total     =    self.x_i + pc_input + pv_input + sst_input + vip_input \
                         + self.noise_strength*self.rng.randn(self.num)
         
         r_vip = self.integral(self.r_vip, _t, I_total, _dt)
         
         r_vip = bm.where(r_vip<0, 0, r_vip)
-        # r_vip[r_vip<0] = 0
 
         self.r_vip.value = r_vip

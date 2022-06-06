@@ -19,6 +19,8 @@ from NeuronZoo import PCNeuron, PVNeuron, SSTNeuron, VIPNeuron
 from utils import SetConnectivity, violoin_plot
 
 bp.math.set_platform('cpu')
+seed=123
+np.random.seed(123)
 
 def build_model(x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='control'):
     #%%initialize the hyper-parameters  
@@ -26,7 +28,7 @@ def build_model(x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='contr
     tau_pc = 10; tau_pv = 10; tau_sst = 10; tau_vip = 10
     lambda_s = 0.31; lambda_d = 0.27
     c = 7; theta_c = 28
-    theta_s = 14
+    theta_s = 13
     
     #total number of neurons (nparray)
     NC = np.asarray([num_pc, num_pv, num_sst, num_vip])
@@ -59,8 +61,8 @@ def build_model(x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='contr
         #normalize the synaptic strength for stability
         Con_Stre = Con_Stre/79.0
     elif state == 'md4':
-        #x_s = 10.0 # spontaneous: bottom up input decreased with MD 4 days 
-        x_s = 16.0 # spontaneous: bottom up input decreased with MD 4 days 
+        #x_s = 14.0 # spontaneous: bottom up input decreased with MD 4 days 
+        #x_s = 16.0 # spontaneous: bottom up input decreased with MD 4 days 
         #Connection Probability (Data from Li Yao's experiment)
         Con_Prob = np.array([[0.096,0.776,0.08,0.007],
                              [0.622,0.426,0.533,0.088],
@@ -94,15 +96,15 @@ def build_model(x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='contr
     #%% initialize the neuron class and build the network
     pcs = PCNeuron(num_pc, tau_pc, noise_strength, lambda_s, lambda_d, 
                    x_s, x_d, c, theta_s, theta_c, 
-                   W_pc_pv, W_pc_pc, W_pc_sst)   #monitors=['r_pc', 'I_0']
+                   W_pc_pv, W_pc_pc, W_pc_sst, seed)   #monitors=['r_pc', 'I_0']
     pvs = PVNeuron(num_pv, tau_pv, noise_strength, x_i_pv, 
-                   W_pv_pc, W_pv_pv, W_pv_sst, W_pv_vip)   #monitors=['r_pv'] 
+                   W_pv_pc, W_pv_pv, W_pv_sst, W_pv_vip, seed)   #monitors=['r_pv'] 
     
     ssts = SSTNeuron(num_sst, tau_sst, noise_strength, x_i_sst, 
-                     W_sst_pc, W_sst_pv, W_sst_sst, W_sst_vip)  #monitors=['r_sst']
+                     W_sst_pc, W_sst_pv, W_sst_sst, W_sst_vip, seed)  #monitors=['r_sst']
     
     vips = VIPNeuron(num_vip, tau_vip, noise_strength, x_i_vip, 
-                     W_vip_pc, W_vip_pv, W_vip_sst, W_vip_vip)  #monitors=['r_vip']
+                     W_vip_pc, W_vip_pv, W_vip_sst, W_vip_vip, seed)  #monitors=['r_vip']
     
     pcs.PV = pvs; pcs.SST = ssts 
     pvs.PC = pcs; pvs.SST = ssts; pvs.VIP = vips
@@ -132,18 +134,19 @@ def run_trials(n_trials, x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, sta
         runner.run(duration=1000)
         
         #for each trial, random sampling 5 neurons
-        idx = np.random.choice(700, 1, replace=False)
+        n_cells = 5
+        idx = np.random.choice(700, n_cells, replace=False)
         pc_samples = runner.mon['PC.r_pc'][-1,idx]; PC_Sam.append(pc_samples)
         
-        idx = np.random.choice(100, 1, replace=False)
+        idx = np.random.choice(100, n_cells, replace=False)
         pv_samples = runner.mon['PV.r_pv'][-1,idx]; PV_Sam.append(pv_samples)
         # pv_samples = pvs.mon.r_pv[-1,idx]; PV_Sam.append(pv_samples)
 
-        idx = np.random.choice(100, 1, replace=False)
+        idx = np.random.choice(100, n_cells, replace=False)
         sst_samples = runner.mon['SST.r_sst'][-1,idx]; SST_Sam.append(sst_samples)
         # sst_samples = ssts.mon.r_sst[-1,idx]; SST_Sam.append(sst_samples)
 
-        idx = np.random.choice(100, 1, replace=False)
+        idx = np.random.choice(100, n_cells, replace=False)
         vip_samples = runner.mon['VIP.r_vip'][-1,idx]; VIP_Sam.append(vip_samples)
         # vip_samples = vips.mon.r_vip[-1,idx]; VIP_Sam.append(vip_samples)
 
@@ -155,9 +158,9 @@ def run_trials(n_trials, x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, sta
 def do_stats(cond):
     
     if cond == 'Spont.':
-        n_trials = 20; noise_strength = 3. #noise level
-        x_s = 14; x_d = 14
-        x_i_pv = 4; x_i_sst=3; x_i_vip=2
+        n_trials = 5; noise_strength = 3.0 #noise level
+        x_s = 13.0; x_d = 13.0
+        x_i_pv = 3.0; x_i_sst=2.0; x_i_vip=1.2
         print('Modeling Spontaneous...') 
     elif cond == 'Evoked':
         n_trials = 1; noise_strength = 0. #noise level
@@ -190,5 +193,5 @@ def do_stats(cond):
                VIP_Samples_md4, cond, celltype='VIP')
 
 if __name__=='__main__':
-    #do_stats(cond = 'Spont.')
-    do_stats(cond = 'Evoked')
+    do_stats(cond = 'Spont.')
+    #do_stats(cond = 'Evoked')
