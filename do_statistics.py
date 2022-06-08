@@ -19,16 +19,16 @@ from NeuronZoo import PCNeuron, PVNeuron, SSTNeuron, VIPNeuron
 from utils import SetConnectivity, violoin_plot
 
 bp.math.set_platform('cpu')
-seed=123
-np.random.seed(123)
+seed=1234
+np.random.seed(seed)
 
-def build_model(x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='control'):
+def build_model(x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='control', cond='Spont.'):
     #%%initialize the hyper-parameters  
     num_pc = 700; num_pv = 100; num_sst = 100; num_vip = 100
     tau_pc = 10; tau_pv = 10; tau_sst = 10; tau_vip = 10
     lambda_s = 0.31; lambda_d = 0.27
     c = 7; theta_c = 28
-    theta_s = 13
+    theta_s = 14
     
     #total number of neurons (nparray)
     NC = np.asarray([num_pc, num_pv, num_sst, num_vip])
@@ -61,8 +61,14 @@ def build_model(x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='contr
         #normalize the synaptic strength for stability
         Con_Stre = Con_Stre/79.0
     elif state == 'md4':
-        #x_s = 14.0 # spontaneous: bottom up input decreased with MD 4 days 
-        #x_s = 16.0 # spontaneous: bottom up input decreased with MD 4 days 
+        if cond=='Spont.':
+            #x_s = 18.8
+            x_s = 17.4 # spontaneous: bottom up input decreased with MD 4 days 
+        elif cond=='Evoked':
+            #x_s = 22.8
+            x_s = 20.7 # evoked: bottom up input decreased with MD 4 days 
+        else:
+            raise ValueError('Choose correct condition!')
         #Connection Probability (Data from Li Yao's experiment)
         Con_Prob = np.array([[0.096,0.776,0.08,0.007],
                              [0.622,0.426,0.533,0.088],
@@ -117,13 +123,14 @@ def build_model(x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='contr
     return micro_net, pcs, pvs, ssts, vips
 
 #%%
-def run_trials(n_trials, x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state):
+def run_trials(n_trials, x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state, cond):
     PC_Sam = []; PV_Sam = []; SST_Sam=[]; VIP_Sam=[]
     for i in range(n_trials):
         bp.base.clear_name_cache()
         print('simulating trail {:.0f}'.format(i)) 
         micro_net, pcs, pvs, ssts, vips = build_model(x_s, x_d, x_i_pv, x_i_sst, 
-                                                      x_i_vip, noise_strength, state)  
+                                                      x_i_vip, noise_strength, state,
+                                                      cond)  
         #reset the firing rates of different cell types
         pcs.r_pc[:] = 0.; pvs.r_pv[:] = 0.; ssts.r_sst[:] = 0.; vips.r_vip[:] = 0.  
         runner = bp.dyn.DSRunner(micro_net, 
@@ -134,7 +141,7 @@ def run_trials(n_trials, x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, sta
         runner.run(duration=1000)
         
         #for each trial, random sampling 5 neurons
-        n_cells = 5
+        n_cells = 4
         idx = np.random.choice(700, n_cells, replace=False)
         pc_samples = runner.mon['PC.r_pc'][-1,idx]; PC_Sam.append(pc_samples)
         
@@ -158,26 +165,28 @@ def run_trials(n_trials, x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, sta
 def do_stats(cond):
     
     if cond == 'Spont.':
-        n_trials = 5; noise_strength = 3.0 #noise level
-        x_s = 13.0; x_d = 13.0
-        x_i_pv = 3.0; x_i_sst=2.0; x_i_vip=1.2
+        n_trials = 10; noise_strength = 3.  #noise level
+        #n_trials = 1; noise_strength = 0.0 #noise level
+        x_s = 18.8; x_d = 10
+        x_i_pv = 3.1; x_i_sst=1.9; x_i_vip=1.4
         print('Modeling Spontaneous...') 
     elif cond == 'Evoked':
-        n_trials = 1; noise_strength = 0. #noise level
-        x_s = 18; x_d = 14
-        x_i_pv = 6; x_i_sst=3; x_i_vip=2
+        n_trials = 10; noise_strength = 5. #noise level
+        #n_trials = 1; noise_strength = 0. #noise level
+        x_s = 22.8; x_d = 10
+        x_i_pv = 7.1; x_i_sst=3.3; x_i_vip=2.8
         print('Modeling Evoked...') 
     else:
         raise ValueError("Wrong Condition Name, Check It.")
         
     PC_Samples_ctrl1, PV_Samples_ctrl1, SST_Samples_ctrl1, VIP_Samples_ctrl1 \
-        = run_trials(n_trials, x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='control')
+        = run_trials(n_trials, x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='control', cond=cond)
     PC_Samples_md1, PV_Samples_md1, SST_Samples_md1, VIP_Samples_md1 \
-        = run_trials(n_trials, x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='md1')
+        = run_trials(n_trials, x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='md1', cond=cond)
     PC_Samples_ctrl2, PV_Samples_ctrl2, SST_Samples_ctrl2, VIP_Samples_ctrl2 \
-        = run_trials(n_trials, x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='control')
+        = run_trials(n_trials, x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='control', cond=cond)
     PC_Samples_md4, PV_Samples_md4, SST_Samples_md4, VIP_Samples_md4 \
-        = run_trials(n_trials, x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='md4')
+        = run_trials(n_trials, x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='md4', cond=cond)
     
     # ttest on PCs ctrl vs. md1 & ctrl vs. md4
     violoin_plot(PC_Samples_ctrl1, PC_Samples_md1, PC_Samples_ctrl2, 
@@ -193,5 +202,5 @@ def do_stats(cond):
                VIP_Samples_md4, cond, celltype='VIP')
 
 if __name__=='__main__':
-    do_stats(cond = 'Spont.')
-    #do_stats(cond = 'Evoked')
+    #do_stats(cond = 'Spont.')
+    do_stats(cond = 'Evoked')
