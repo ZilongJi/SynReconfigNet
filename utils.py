@@ -11,6 +11,7 @@ Created on Sun Aug 15 15:39:34 2021
 @author: Zilong Ji
 Acknowledgement: Brainpy developer: Chaoming Wang
 """
+import brainpy.math as bm
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -36,18 +37,20 @@ def SetConnectivity(Con_Prob, Con_Stre, NC):
     for i in range(16):
         m,n = np.unravel_index(i,(4,4))
         weightname = NameList[m,n]
-        Mtx = np.zeros((NC[m], NC[n]))
+        Mtx = bm.zeros((NC[m], NC[n]))
         if NCon[m,n]>0: #if there are connections, go to the next step
             if m==n: #connection between the neurons in same type, omit the autapse
                 for l in range(NC[m]):
-                    weight = Con_Stre[m,n]*np.array([0] * (NC[n]-1-NCon[m,n]) + [1] * NCon[m,n])/NCon[m,n]
-                    np.random.shuffle(weight)
-                    weight = np.insert(weight,l,0)
+                    weight = Con_Stre[m,n]*bm.array([0] * (NC[n]-1-NCon[m,n]) + [1] * NCon[m,n])/NCon[m,n]
+                    weight = bm.asarray(weight)
+                    bm.random.shuffle(weight)
+                    weight = bm.insert(weight,l,0)
                     Mtx[l,:] = weight
             else: #connection between the neurons in different types
                 for l in range(NC[m]):
-                    weight = Con_Stre[m,n]*np.array([0] * (NC[n]-NCon[m,n]) + [1] * NCon[m,n])/NCon[m,n]
-                    np.random.shuffle(weight)
+                    weight = Con_Stre[m,n]*bm.array([0] * (NC[n]-NCon[m,n]) + [1] * NCon[m,n])/NCon[m,n]
+                    weight = bm.asarray(weight)
+                    bm.random.shuffle(weight)
                     Mtx[l,:] = weight
         WeightDic[weightname] = Mtx
     
@@ -206,6 +209,11 @@ def violoin_plot(ctrl1, md1, ctrl2, md4, cond, celltype):
     """
     violinplot with seaborn
     """
+    ctrl1 = bm.as_numpy(ctrl1).flatten()
+    md1 = bm.as_numpy(md1).flatten()
+    ctrl2 = bm.as_numpy(ctrl2).flatten()
+    md4 = bm.as_numpy(md4).flatten()
+
     #regroup the data into dataframe
     data = np.concatenate(
         [[ctrl1, len(ctrl1)*['control vs. md1'], len(ctrl1)*['control']],

@@ -15,14 +15,17 @@ Acknowledgement: Brainpy developer: Chaoming Wang
 """
 import brainpy as bp
 import numpy as np
+import brainpy.math as bm
 from NeuronZoo import PCNeuron, PVNeuron, SSTNeuron, VIPNeuron
 from utils import SetConnectivity, violoin_plot
+from jax import vmap
+from functools import partial
 
 bp.math.set_platform('cpu')
 seed=1234
 np.random.seed(seed)
 
-def build_model(x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='control', cond='Spont.'):
+def build_model(noise_strength, state='control', cond='Spont.'):
     #%%initialize the hyper-parameters  
     num_pc = 700; num_pv = 100; num_sst = 100; num_vip = 100
     tau_pc = 10; tau_pv = 10; tau_sst = 10; tau_vip = 10
@@ -30,18 +33,36 @@ def build_model(x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='contr
     c = 7; theta_c = 28
     theta_s = 14
     
+    #bottom-up input and top-down input
+    if cond=='Spont.':
+        # homogenous input 
+        x_s     =   18.8*bm.ones(num_pc)
+        x_d     =   10.0*bm.ones(num_pc)
+        x_i_pv  =   3.1*bm.ones(num_pv)
+        x_i_sst =   1.9*bm.ones(num_sst)
+        x_i_vip =   1.4*bm.ones(num_vip)
+    elif cond=='Evoked':  
+        # heterogeneous input
+        x_s = 22.8
+        x_d = 10
+        x_i_pv = 7.1
+        x_i_sst=3.3
+        x_i_vip=2.8      
+    else:
+        raise ValueError('Choose correct condition!')       
+    
     #total number of neurons (nparray)
     NC = np.asarray([num_pc, num_pv, num_sst, num_vip])
         
     #Connection Strength (Data from Li Yao's experiment)
     if state == 'control':
         #Connection Probability (Data from Li Yao's experiment)
-        Con_Prob = np.array([[0.096,0.776,0.08,0.007],
+        Con_Prob = bm.array([[0.096,0.776,0.08,0.007],
                              [0.622,0.643,0.317,0.088],
                              [0.460,0.176,0.000,0.119],
                              [0.245,0.239,0.237,0.000]])        
         
-        Con_Stre = np.array([[8.,  -79.,  -8.,  0.],
+        Con_Stre = bm.array([[8.,  -79.,  -8.,  0.],
                              [22., -70.,  -12., -14.],
                              [4.,  -41.,   0.,  -5.],
                              [10., -35.,  -7.,  0.]])
@@ -49,12 +70,12 @@ def build_model(x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='contr
         Con_Stre = Con_Stre/79.0 
     elif state == 'md1':
         #Connection Probability (Data from Li Yao's experiment)
-        Con_Prob = np.array([[0.096,0.905,0.08,0.007],
+        Con_Prob = bm.array([[0.096,0.905,0.08,0.007],
                              [0.622,0.643,0.317,0.088],
                              [0.460,0.176,0.000,0.119],
                              [0.245,0.239,0.237,0.000]])     
         
-        Con_Stre = np.array([[8.,  -79.,  -8.,  0.],
+        Con_Stre = bm.array([[8.,  -79.,  -8.,  0.],
                              [34., -70.,  -12., -14.],
                              [4.,  -41.,  0.,   -5.],
                              [22., -35,   -7.,  0.]])
@@ -70,12 +91,12 @@ def build_model(x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='contr
         else:
             raise ValueError('Choose correct condition!')
         #Connection Probability (Data from Li Yao's experiment)
-        Con_Prob = np.array([[0.096,0.776,0.08,0.007],
+        Con_Prob = bm.array([[0.096,0.776,0.08,0.007],
                              [0.622,0.426,0.533,0.088],
                              [0.460,0.367,0.000,0.119],
                              [0.245,0.239,0.237,0.000]])    
         
-        Con_Stre = np.array([[8.,  -38.,  -8.,  0.],
+        Con_Stre = bm.array([[8.,  -38.,  -8.,  0.],
                              [22., -70.,  -28., -14.],
                              [4.,  -41.,  0.,   -5.],
                              [10., -35.,  -19,  0.]])
@@ -122,44 +143,69 @@ def build_model(x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='contr
     
     return micro_net, pcs, pvs, ssts, vips
 
-#%%
-def run_trials(n_trials, x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state, cond):
-    PC_Sam = []; PV_Sam = []; SST_Sam=[]; VIP_Sam=[]
-    for i in range(n_trials):
-        bp.base.clear_name_cache()
-        print('simulating trail {:.0f}'.format(i)) 
-        micro_net, pcs, pvs, ssts, vips = build_model(x_s, x_d, x_i_pv, x_i_sst, 
-                                                      x_i_vip, noise_strength, state,
-                                                      cond)  
-        #reset the firing rates of different cell types
-        pcs.r_pc[:] = 0.; pvs.r_pv[:] = 0.; ssts.r_sst[:] = 0.; vips.r_vip[:] = 0.  
-        runner = bp.dyn.DSRunner(micro_net, 
-                                 monitors=['PC.r_pc', 'PC.I_0',
-                                           'PV.r_pv', 'SST.r_sst',
-                                           'VIP.r_vip'],
-                                 dt=0.1)
-        runner.run(duration=1000)
-        
-        #for each trial, random sampling 5 neurons
-        n_cells = 4
-        idx = np.random.choice(700, n_cells, replace=False)
-        pc_samples = runner.mon['PC.r_pc'][-1,idx]; PC_Sam.append(pc_samples)
-        
-        idx = np.random.choice(100, n_cells, replace=False)
-        pv_samples = runner.mon['PV.r_pv'][-1,idx]; PV_Sam.append(pv_samples)
-        # pv_samples = pvs.mon.r_pv[-1,idx]; PV_Sam.append(pv_samples)
 
-        idx = np.random.choice(100, n_cells, replace=False)
-        sst_samples = runner.mon['SST.r_sst'][-1,idx]; SST_Sam.append(sst_samples)
-        # sst_samples = ssts.mon.r_sst[-1,idx]; SST_Sam.append(sst_samples)
+# @partial(vmap, in_axes=(None, None, None, 0))
+def run_a_trial(noise_strength, state, cond, ids):
+  micro_net, pcs, pvs, ssts, vips = build_model(noise_strength, state, cond)
+  # reset the firing rates of different cell types
+  pcs.r_pc[:] = 0.;
+  pvs.r_pv[:] = 0.;
+  ssts.r_sst[:] = 0.;
+  vips.r_vip[:] = 0.
+  runner = bp.dyn.DSRunner(micro_net,
+                           monitors=['PC.r_pc', 'PC.I_0',
+                                     'PV.r_pv', 'SST.r_sst',
+                                     'VIP.r_vip'],
+                           dt=0.1,
+                           numpy_mon_after_run=False,
+                           progress_bar=False)
+  runner.run(duration=1000)
 
-        idx = np.random.choice(100, n_cells, replace=False)
-        vip_samples = runner.mon['VIP.r_vip'][-1,idx]; VIP_Sam.append(vip_samples)
-        # vip_samples = vips.mon.r_vip[-1,idx]; VIP_Sam.append(vip_samples)
+  # for each trial, random sampling 5 neurons
+  pc_samples = runner.mon['PC.r_pc'][-1, ids[0]];
+  pv_samples = runner.mon['PV.r_pv'][-1, ids[1]];
+  sst_samples = runner.mon['SST.r_sst'][-1, ids[2]];
+  vip_samples = runner.mon['VIP.r_vip'][-1, ids[3]];
+  return pc_samples, pv_samples, sst_samples, vip_samples
 
-    PC_Samples = np.concatenate(PC_Sam); PV_Samples = np.concatenate(PV_Sam)
-    SST_Samples= np.concatenate(SST_Sam); VIP_Samples = np.concatenate(VIP_Sam)
-    return PC_Samples, PV_Samples, SST_Samples, VIP_Samples
+
+# #%%
+# def run_trials(n_trials, noise_strength, state, cond):
+#     PC_Sam = []; PV_Sam = []; SST_Sam=[]; VIP_Sam=[]
+#     for i in range(n_trials):
+#         bp.base.clear_name_cache()
+#         print('simulating trail {:.0f}'.format(i))
+#         micro_net, pcs, pvs, ssts, vips = build_model(noise_strength, state,cond)
+#         #reset the firing rates of different cell types
+#         pcs.r_pc[:] = 0.; pvs.r_pv[:] = 0.; ssts.r_sst[:] = 0.; vips.r_vip[:] = 0.
+#         runner = bp.dyn.DSRunner(micro_net,
+#                                  monitors=['PC.r_pc', 'PC.I_0',
+#                                            'PV.r_pv', 'SST.r_sst',
+#                                            'VIP.r_vip'],
+#                                  dt=0.1)
+#         runner.run(duration=1000)
+#
+#         #for each trial, random sampling 5 neurons
+#         n_cells = 4
+#         idx = np.random.choice(700, n_cells, replace=False)
+#         pc_samples = runner.mon['PC.r_pc'][-1,idx]; PC_Sam.append(pc_samples)
+#
+#         idx = np.random.choice(100, n_cells, replace=False)
+#         pv_samples = runner.mon['PV.r_pv'][-1,idx]; PV_Sam.append(pv_samples)
+#         # pv_samples = pvs.mon.r_pv[-1,idx]; PV_Sam.append(pv_samples)
+#
+#         idx = np.random.choice(100, n_cells, replace=False)
+#         sst_samples = runner.mon['SST.r_sst'][-1,idx]; SST_Sam.append(sst_samples)
+#         # sst_samples = ssts.mon.r_sst[-1,idx]; SST_Sam.append(sst_samples)
+#
+#         idx = np.random.choice(100, n_cells, replace=False)
+#         vip_samples = runner.mon['VIP.r_vip'][-1,idx]; VIP_Sam.append(vip_samples)
+#         # vip_samples = vips.mon.r_vip[-1,idx]; VIP_Sam.append(vip_samples)
+#
+#     PC_Samples = np.concatenate(PC_Sam); PV_Samples = np.concatenate(PV_Sam)
+#     SST_Samples= np.concatenate(SST_Sam); VIP_Samples = np.concatenate(VIP_Sam)
+#     return PC_Samples, PV_Samples, SST_Samples, VIP_Samples
+
 
 #%% do statistics
 def do_stats(cond):
@@ -167,27 +213,39 @@ def do_stats(cond):
     if cond == 'Spont.':
         n_trials = 10; noise_strength = 3.  #noise level
         #n_trials = 1; noise_strength = 0.0 #noise level
-        x_s = 18.8; x_d = 10
-        x_i_pv = 3.1; x_i_sst=1.9; x_i_vip=1.4
         print('Modeling Spontaneous...') 
     elif cond == 'Evoked':
         n_trials = 10; noise_strength = 5. #noise level
         #n_trials = 1; noise_strength = 0. #noise level
-        x_s = 22.8; x_d = 10
-        x_i_pv = 7.1; x_i_sst=3.3; x_i_vip=2.8
         print('Modeling Evoked...') 
     else:
         raise ValueError("Wrong Condition Name, Check It.")
-        
-    PC_Samples_ctrl1, PV_Samples_ctrl1, SST_Samples_ctrl1, VIP_Samples_ctrl1 \
-        = run_trials(n_trials, x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='control', cond=cond)
-    PC_Samples_md1, PV_Samples_md1, SST_Samples_md1, VIP_Samples_md1 \
-        = run_trials(n_trials, x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='md1', cond=cond)
-    PC_Samples_ctrl2, PV_Samples_ctrl2, SST_Samples_ctrl2, VIP_Samples_ctrl2 \
-        = run_trials(n_trials, x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='control', cond=cond)
-    PC_Samples_md4, PV_Samples_md4, SST_Samples_md4, VIP_Samples_md4 \
-        = run_trials(n_trials, x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='md4', cond=cond)
-    
+
+    print('Run ...')
+    bp.base.clear_name_cache()
+    ids = bm.random.choice(700, (n_trials, 4, 4), replace=False)
+    run_trials = vmap(lambda indices: run_a_trial(noise_strength, 'control', cond, indices))
+    PC_Samples_ctrl1, PV_Samples_ctrl1, SST_Samples_ctrl1, VIP_Samples_ctrl1 = run_trials(ids)
+
+    print('Run ...')
+    bp.base.clear_name_cache()
+    ids = bm.random.choice(700, (n_trials, 4, 4), replace=False)
+    run_trials = vmap(lambda indices: run_a_trial(noise_strength, 'md1', cond, indices))
+    PC_Samples_md1, PV_Samples_md1, SST_Samples_md1, VIP_Samples_md1 = run_trials(ids)
+
+    print('Run ...')
+    bp.base.clear_name_cache()
+    ids = bm.random.choice(700, (n_trials, 4, 4), replace=False)
+    run_trials = vmap(lambda indices: run_a_trial(noise_strength, 'control', cond, indices))
+    PC_Samples_ctrl2, PV_Samples_ctrl2, SST_Samples_ctrl2, VIP_Samples_ctrl2  = run_trials(ids)
+
+    print('Run ...')
+    bp.base.clear_name_cache()
+    ids = bm.random.choice(700, (n_trials, 4, 4), replace=False)
+    run_trials = vmap(lambda indices: run_a_trial(noise_strength, 'md4', cond, indices))
+    PC_Samples_md4, PV_Samples_md4, SST_Samples_md4, VIP_Samples_md4 = run_trials(ids)
+
+
     # ttest on PCs ctrl vs. md1 & ctrl vs. md4
     violoin_plot(PC_Samples_ctrl1, PC_Samples_md1, PC_Samples_ctrl2, 
                PC_Samples_md4, cond, celltype='PC')
@@ -201,6 +259,7 @@ def do_stats(cond):
     violoin_plot(VIP_Samples_ctrl1, VIP_Samples_md1, VIP_Samples_ctrl2, 
                VIP_Samples_md4, cond, celltype='VIP')
 
+
 if __name__=='__main__':
-    #do_stats(cond = 'Spont.')
-    do_stats(cond = 'Evoked')
+    do_stats(cond = 'Spont.')
+    #do_stats(cond = 'Evoked')
