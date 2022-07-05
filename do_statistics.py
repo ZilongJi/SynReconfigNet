@@ -19,14 +19,13 @@ import brainpy.math as bm
 from NeuronZoo import PCNeuron, PVNeuron, SSTNeuron, VIPNeuron
 from utils import SetConnectivity, violoin_plot
 from jax import vmap
-from functools import partial
 
 bp.math.set_platform('cpu')
 seed=1234
 np.random.seed(seed)
 
 def build_model(noise_strength, state='control', cond='Spont.'):
-    #%%initialize the hyper-parameters  
+    #%%initialize neuron numbers, time constant, etc  
     num_pc = 700; num_pv = 100; num_sst = 100; num_vip = 100
     tau_pc = 10; tau_pv = 10; tau_sst = 10; tau_vip = 10
     lambda_s = 0.31; lambda_d = 0.27
@@ -52,7 +51,7 @@ def build_model(noise_strength, state='control', cond='Spont.'):
         raise ValueError('Choose correct condition!')       
     
     #total number of neurons (nparray)
-    NC = np.asarray([num_pc, num_pv, num_sst, num_vip])
+    NC = bm.array([num_pc, num_pv, num_sst, num_vip])
         
     #Connection Strength (Data from Li Yao's experiment)
     if state == 'control':
@@ -143,8 +142,6 @@ def build_model(noise_strength, state='control', cond='Spont.'):
     
     return micro_net, pcs, pvs, ssts, vips
 
-
-# @partial(vmap, in_axes=(None, None, None, 0))
 def run_a_trial(noise_strength, state, cond, ids):
   micro_net, pcs, pvs, ssts, vips = build_model(noise_strength, state, cond)
   # reset the firing rates of different cell types

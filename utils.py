@@ -25,7 +25,7 @@ def SetConnectivity(Con_Prob, Con_Stre, NC):
     NC: nparray of the number of PCs, PVs, SSTs, VIPs
     '''
     #
-    NCon = np.round(Con_Prob*NC).astype(np.int)
+    NCon = bm.round(Con_Prob*NC)
     
     NameList = np.asarray([['pc_pc', 'pc_pv', 'pc_sst', 'pc_vip'],
                       ['pv_pc', 'pv_pv', 'pv_sst', 'pv_vip'],
