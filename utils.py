@@ -17,7 +17,7 @@ import pandas as pd
 import seaborn as sns
 from scipy import stats
 import matplotlib.pyplot as plt
-
+"""
 def SetConnectivity(Con_Prob, Con_Stre, NC):
     '''
     Con_Prob: connection probability of all cell types
@@ -26,6 +26,7 @@ def SetConnectivity(Con_Prob, Con_Stre, NC):
     '''
     #
     NCon = bm.round(Con_Prob*NC)
+    NCon= bm.asarray(NCon, dtype=int)
     
     NameList = np.asarray([['pc_pc', 'pc_pv', 'pc_sst', 'pc_vip'],
                       ['pv_pc', 'pv_pv', 'pv_sst', 'pv_vip'],
@@ -55,6 +56,46 @@ def SetConnectivity(Con_Prob, Con_Stre, NC):
         WeightDic[weightname] = Mtx
     
     return WeightDic
+"""
+
+def SetConnectivity(Con_Prob, Con_Stre, NC):
+    '''
+    Con_Prob: connection probability of all cell types
+    Con_Stre: connection strength between two cells
+    NC: nparray of the number of PCs, PVs, SSTs, VIPs
+    '''
+    #
+    NCon = np.round(Con_Prob*NC)
+    NCon = np.asarray(NCon, dtype=np.int32)
+    
+    NameList = np.asarray([['pc_pc', 'pc_pv', 'pc_sst', 'pc_vip'],
+                      ['pv_pc', 'pv_pv', 'pv_sst', 'pv_vip'],
+                      ['sst_pc', 'sst_pv', 'sst_sst', 'sst_vip'],
+                      ['vip_pc', 'vip_pv', 'vip_sst', 'vip_vip']])
+    
+    WeightDic = {} #store all the weight information
+    
+    for i in range(16):
+        m,n = np.unravel_index(i,(4,4))
+        weightname = NameList[m,n]
+        Mtx = np.zeros((NC[m], NC[n]))
+        if NCon[m,n]>0: #if there are connections, go to the next step
+            if m==n: #connection between the neurons in same type, omit the autapse
+                for l in range(NC[m]):
+                    weight = Con_Stre[m,n]*np.array([0] * (NC[n]-1-NCon[m,n]) + [1] * NCon[m,n])/NCon[m,n]
+                    np.random.shuffle(weight)
+                    weight = np.insert(weight,l,0)
+                    Mtx[l,:] = weight
+            else: #connection between the neurons in different types
+                for l in range(NC[m]):
+                    weight = Con_Stre[m,n]*np.array([0] * (NC[n]-NCon[m,n]) + [1] * NCon[m,n])/NCon[m,n]
+                    np.random.shuffle(weight)
+                    Mtx[l,:] = weight
+        
+        WeightDic[weightname] = bm.array(Mtx)
+    
+    return WeightDic
+
 
 def grid_plot(FPC, FPV, FSST, FVIP, XS, XD, name):
     """
