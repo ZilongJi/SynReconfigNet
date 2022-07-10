@@ -15,6 +15,7 @@ class PCNeuron(bp.dyn.NeuGroup):
         super(PCNeuron, self).__init__(size, name='PC', **kwargs) 
         
         #parameters
+        self.size           =   size            # number of neurons
         self.tau            =   tau             # the rate time constant for PC neuron
         self.noise_strength =   noise_strength  # noise strength add to each neuron
         self.lambda_s       =   lambda_s        # the percentage of currents leadking away from soma
@@ -98,6 +99,7 @@ class PVNeuron(bp.dyn.NeuGroup):
         super(PVNeuron, self).__init__(size, name='PV', **kwargs)
         
         #parameters
+        self.size           =   size              # number of neurons
         self.tau            =   tau               # the GABAa time constant for PVs
         self.noise_strength =   noise_strength    # noise strength add to each neuron
         self.x_i            =   x_i               # external input to PVs
@@ -151,6 +153,7 @@ class SSTNeuron(bp.dyn.NeuGroup):
         super(SSTNeuron, self).__init__(size, name='SST', **kwargs)
         
         #parameters
+        self.size           =   size              # number of neurons
         self.tau            =   tau                 # the GABAa time constant for SSTs
         self.noise_strength =   noise_strength      # noise strength add to each neuron
         self.x_i            =   x_i                 # external input to SSTs
@@ -201,6 +204,7 @@ class VIPNeuron(bp.dyn.NeuGroup):
         super(VIPNeuron, self).__init__(size, name='VIP', **kwargs)
         
         #parameters
+        self.size           =   size                # number of neurons
         self.tau            =   tau                 # the GABAa time constant for VIPs
         self.noise_strength =   noise_strength      # noise strength add to each neuron
         self.x_i            =   x_i                 # external input to VIPs

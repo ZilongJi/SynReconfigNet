@@ -1,0 +1,226 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Jul  9 14:29:04 2022
+
+@author: Zilong
+
+A rate-based two compartment micro-circuit model of PCs, PVs, SSTs and VIPs.
+
+Modeling for Li Yao's work on:
+Temporal Reconfiguration ofCortical Microcircuits for Neural Activity by 
+Visual Deprivation
+
+@author: Zilong Ji
+Acknowledgement: Brainpy developer: Chaoming Wang
+"""
+import brainpy as bp
+import numpy as np
+import brainpy.math as bm
+from NeuronZoo import PCNeuron, PVNeuron, SSTNeuron, VIPNeuron
+from utils import SetConnectivity, violoin_plot
+
+bp.math.set_platform('cpu')
+seed=1234
+np.random.seed(seed)
+
+def build_model(noise_strength, state='control', cond='Spont.'):
+    #%%initialize neuron numbers, time constant, etc  
+    num_pc = 700; num_pv = 100; num_sst = 100; num_vip = 100
+    tau_pc = 10; tau_pv = 10; tau_sst = 10; tau_vip = 10
+    lambda_s = 0.31; lambda_d = 0.27
+    c = 7; theta_c = 28
+    theta_s = 14
+    
+    #bottom-up input and top-down input
+    if cond=='Spont.':
+        # homogenous input 
+        x_s     =   18.8*bm.ones(num_pc)
+        x_d     =   10.0*bm.ones(num_pc)
+        x_i_pv  =   3.1*bm.ones(num_pv)
+        x_i_sst =   1.9*bm.ones(num_sst)
+        x_i_vip =   1.4*bm.ones(num_vip)
+    elif cond=='Evoked':  
+        # heterogeneous input
+        x_s     =   bm.concatenate((30.0*bm.ones(int(num_pc/4)), 20.4*bm.ones(num_pc-int(num_pc/4)))) #22.8
+        x_d     =   10*bm.ones(num_pc)
+        
+        x_i_pv  =   bm.concatenate((10.0*bm.ones(int(num_pv/4)), 6.1*bm.ones(num_pv-int(num_pv/4))))  #7.1
+        x_i_sst =   bm.concatenate((6.0*bm.ones(int(num_sst/4)), 2.4*bm.ones(num_sst-int(num_sst/4))))  #3.3
+        x_i_vip =   bm.concatenate((5.0*bm.ones(int(num_vip/4)), 2.1*bm.ones(num_vip-int(num_vip/4))))  #2.8   
+    else:
+        raise ValueError('Choose correct condition!')       
+    
+    #total number of neurons (nparray)
+    NC = np.array([num_pc, num_pv, num_sst, num_vip])
+        
+    #Connection Strength (Data from Li Yao's experiment)
+    if state == 'control':
+        #Connection Probability (Data from Li Yao's experiment)
+        Con_Prob = np.array([[0.096,0.776,0.08,0.007],
+                             [0.622,0.643,0.317,0.088],
+                             [0.460,0.176,0.000,0.119],
+                             [0.245,0.239,0.237,0.000]])        
+        
+        Con_Stre = np.array([[8.,  -79.,  -8.,  0.],
+                             [22., -70.,  -12., -14.],
+                             [4.,  -41.,   0.,  -5.],
+                             [10., -35.,  -7.,  0.]])
+        #normalize the synaptic strength for stability
+        Con_Stre = Con_Stre/79.0 
+    elif state == 'md1':
+        #Connection Probability (Data from Li Yao's experiment)
+        Con_Prob = np.array([[0.096,0.905,0.08,0.007],
+                             [0.622,0.643,0.317,0.088],
+                             [0.460,0.176,0.000,0.119],
+                             [0.245,0.239,0.237,0.000]])     
+        
+        Con_Stre = np.array([[8.,  -79.,  -8.,  0.],
+                             [34., -70.,  -12., -14.],
+                             [4.,  -41.,  0.,   -5.],
+                             [22., -35,   -7.,  0.]])
+        #normalize the synaptic strength for stability
+        Con_Stre = Con_Stre/79.0
+    elif state == 'md4':
+        if cond=='Spont.':
+            #x_s = 18.8
+            x_s = 17.4*bm.ones(num_pc) # spontaneous: bottom up input decreased with MD 4 days 
+        elif cond=='Evoked':
+            #x_s = 22.8
+            #x_s = 20.7*bm.ones(num_pc) # evoked: bottom up input decreased with MD 4 days 
+            x_s     =   bm.concatenate((28.0*bm.ones(int(num_pc/4)), 18.6*bm.ones(num_pc-int(num_pc/4)))) #22.8     
+        else:
+            raise ValueError('Choose correct condition!')
+        #Connection Probability (Data from Li Yao's experiment)
+        Con_Prob = np.array([[0.096,0.776,0.08,0.007],
+                             [0.622,0.426,0.533,0.088],
+                             [0.460,0.367,0.000,0.119],
+                             [0.245,0.239,0.237,0.000]])    
+        
+        Con_Stre = np.array([[8.,  -38.,  -8.,  0.],
+                             [22., -70.,  -28., -14.],
+                             [4.,  -41.,  0.,   -5.],
+                             [10., -35.,  -19,  0.]])
+        #normalize the synaptic strength for stability
+        Con_Stre = Con_Stre/79.0
+    else:
+        raise ValueError("Wrong State Name, Check It.")
+
+    #%% generate the synaptic connections    
+    Weights = SetConnectivity(Con_Prob, Con_Stre, NC) 
+    
+    W_pc_pc, W_pc_pv, W_pc_sst \
+        = Weights['pc_pc'], Weights['pc_pv'], Weights['pc_sst']
+    
+    W_pv_pc, W_pv_pv, W_pv_sst, W_pv_vip \
+        = Weights['pv_pc'], Weights['pv_pv'], Weights['pv_sst'], Weights['pv_vip']
+    
+    W_sst_pc, W_sst_pv, W_sst_sst, W_sst_vip \
+        = Weights['sst_pc'], Weights['sst_pv'], Weights['sst_sst'], Weights['sst_vip']
+    
+    W_vip_pc, W_vip_pv, W_vip_sst, W_vip_vip \
+        = Weights['vip_pc'], Weights['vip_pv'], Weights['vip_sst'], Weights['vip_vip']
+
+    #%% initialize the neuron class and build the network
+    pcs = PCNeuron(num_pc, tau_pc, noise_strength, lambda_s, lambda_d, 
+                   x_s, x_d, c, theta_s, theta_c, 
+                   W_pc_pv, W_pc_pc, W_pc_sst, seed)   #monitors=['r_pc', 'I_0']
+    pvs = PVNeuron(num_pv, tau_pv, noise_strength, x_i_pv, 
+                   W_pv_pc, W_pv_pv, W_pv_sst, W_pv_vip, seed)   #monitors=['r_pv'] 
+    
+    ssts = SSTNeuron(num_sst, tau_sst, noise_strength, x_i_sst, 
+                     W_sst_pc, W_sst_pv, W_sst_sst, W_sst_vip, seed)  #monitors=['r_sst']
+    
+    vips = VIPNeuron(num_vip, tau_vip, noise_strength, x_i_vip, 
+                     W_vip_pc, W_vip_pv, W_vip_sst, W_vip_vip, seed)  #monitors=['r_vip']
+    
+    pcs.PV = pvs; pcs.SST = ssts 
+    pvs.PC = pcs; pvs.SST = ssts; pvs.VIP = vips
+    ssts.PC = pcs; ssts.PV = pvs; ssts.VIP = vips
+    vips.PC = pcs; vips.PV = pvs; vips.SST = ssts
+    
+    #build the network
+    micro_net = bp.dyn.Network(pcs, pvs, ssts, vips)
+    
+    return micro_net, pcs, pvs, ssts, vips
+
+def run_trials(n_trials, noise_strength, state, cond):
+    PC_Sam = []; PV_Sam = []; SST_Sam=[]; VIP_Sam=[]
+    for i in range(n_trials):
+        bp.base.clear_name_cache()
+        print('simulating trail {:.0f}'.format(i)) 
+        micro_net, pcs, pvs, ssts, vips = build_model(noise_strength, state, cond)
+
+        #reset the firing rates of different cell types
+        pcs.r_pc[:] = 0.; pvs.r_pv[:] = 0.; ssts.r_sst[:] = 0.; vips.r_vip[:] = 0.  
+
+        runner = bp.dyn.DSRunner(micro_net,
+                                 monitors=['PC.r_pc', 'PC.I_0',
+                                           'PV.r_pv', 'SST.r_sst',
+                                           'VIP.r_vip'],
+                                 dt=0.1,
+                                 numpy_mon_after_run=False,
+                                 progress_bar=True)
+        
+        runner.run(duration=1000)
+        
+        #for each trial, random sampling 5 neurons
+        n_cells = 4
+        idx = np.random.choice(int(pcs.size/4), n_cells, replace=False)
+        pc_samples = runner.mon['PC.r_pc'][-1,idx]; PC_Sam.append(pc_samples)
+        
+        idx = np.random.choice(int(pvs.size/4), n_cells, replace=False)
+        pv_samples = runner.mon['PV.r_pv'][-1,idx]; PV_Sam.append(pv_samples)
+        # pv_samples = pvs.mon.r_pv[-1,idx]; PV_Sam.append(pv_samples)
+
+        idx = np.random.choice(int(ssts.size/4), n_cells, replace=False)
+        sst_samples = runner.mon['SST.r_sst'][-1,idx]; SST_Sam.append(sst_samples)
+        # sst_samples = ssts.mon.r_sst[-1,idx]; SST_Sam.append(sst_samples)
+
+        idx = np.random.choice(int(vips.size/4), n_cells, replace=False)
+        vip_samples = runner.mon['VIP.r_vip'][-1,idx]; VIP_Sam.append(vip_samples)
+        # vip_samples = vips.mon.r_vip[-1,idx]; VIP_Sam.append(vip_samples)
+
+    PC_Samples = np.concatenate(PC_Sam); PV_Samples = np.concatenate(PV_Sam)
+    SST_Samples= np.concatenate(SST_Sam); VIP_Samples = np.concatenate(VIP_Sam)
+    return PC_Samples, PV_Samples, SST_Samples, VIP_Samples
+
+#%% do statistics
+def do_stats(cond):
+    
+    if cond == 'Spont.':
+        n_trials = 10; noise_strength = 3.  #noise level
+        #n_trials = 1; noise_strength = 0.0 #noise level
+        print('Modeling Spontaneous...') 
+    elif cond == 'Evoked':
+        n_trials = 10; noise_strength = 10. #noise level
+        #n_trials = 1; noise_strength = 0. #noise level
+        print('Modeling Evoked...') 
+    else:
+        raise ValueError("Wrong Condition Name, Check It.")
+
+    PC_Samples_ctrl1, PV_Samples_ctrl1, SST_Samples_ctrl1, VIP_Samples_ctrl1 = run_trials(n_trials, noise_strength,state='control', cond=cond)
+
+    PC_Samples_md1, PV_Samples_md1, SST_Samples_md1, VIP_Samples_md1 = run_trials(n_trials, noise_strength,state='md1', cond=cond)
+
+    PC_Samples_ctrl2, PV_Samples_ctrl2, SST_Samples_ctrl2, VIP_Samples_ctrl2  = run_trials(n_trials, noise_strength,state='control', cond=cond)
+
+    PC_Samples_md4, PV_Samples_md4, SST_Samples_md4, VIP_Samples_md4 = run_trials(n_trials, noise_strength,state='md4', cond=cond)
+
+
+    # ttest on PCs ctrl vs. md1 & ctrl vs. md4
+    violoin_plot(PC_Samples_ctrl1, PC_Samples_md1, PC_Samples_ctrl2, 
+               PC_Samples_md4, cond, celltype='PC')
+    
+    violoin_plot(PV_Samples_ctrl1, PV_Samples_md1, PV_Samples_ctrl2, 
+               PV_Samples_md4, cond, celltype='PV')
+    
+    violoin_plot(SST_Samples_ctrl1, SST_Samples_md1, SST_Samples_ctrl2, 
+               SST_Samples_md4, cond, celltype='SST')
+    
+    violoin_plot(VIP_Samples_ctrl1, VIP_Samples_md1, VIP_Samples_ctrl2, 
+               VIP_Samples_md4, cond, celltype='VIP')
+
+
+if __name__=='__main__':
+    #do_stats(cond = 'Spont.')
+    do_stats(cond = 'Evoked')
