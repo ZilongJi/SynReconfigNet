@@ -712,14 +712,107 @@ def percentage_plot(Results, cond, celltype):
         plt.savefig('./figures/percentage_'+cond+'_'+celltype+'.png')
         plt.savefig('./figures/EPS/percentage_'+cond+'_'+celltype+'.eps')   
 
-def synaptic_contribution_plot(Results, celltype):
+def normed_synaptic_contribution_plot(Results, cond, status, celltype):
     """
     plot the percentage of contribution of each varying synapses during MD4
     Input:
         Results: storing the varying-synapse firing rate results of one cell type
         condition:
     """
-    varied_synapses = ['pc_pv', 'pv_sst', 'vip_sst']
+    
+    if status == 'MD1':
+        varied_synapses = ['pc_pv', 'pv_pc', 'vip_pc']
+        
+        norm_diff = []
+        name = []
+        
+        for synap in varied_synapses:
+            F_Neuron = Results[synap]
+            
+            synap_diff = []; synap_name = []
+            for i in range(len(F_Neuron)):
+                start_fr = F_Neuron[i][0]
+                end_fr = F_Neuron[i][1]
+                if synap=='pc_pv':  
+                    diff_per_change = (end_fr-start_fr)/(abs(0.776*79-0.905*79))
+                elif synap == 'pv_pc':
+                    diff_per_change = (end_fr-start_fr)/(abs(0.622*22-0.622*34))
+                elif synap == 'vip_pc':
+                    diff_per_change = (end_fr-start_fr)/(abs(0.245*10-0.245*22))
+                else:
+                    raise ValueError('Synapse nam eoutof range!')  
+                    
+                synap_diff.append(diff_per_change)
+                synap_name.append(synap)
+       
+            norm_diff+=synap_diff
+            name+=synap_name 
+            
+    else: #MD4
+        varied_synapses = ['pc_pv', 'pv_pv', 'sst_pv', 'pv_sst', 'vip_sst']
+        
+        norm_diff = []
+        name = []
+        
+        for synap in varied_synapses:
+            F_Neuron = Results[synap]
+              
+            synap_diff = []; synap_name = []
+            for i in range(len(F_Neuron)):
+                start_fr = F_Neuron[i][0]
+                end_fr = F_Neuron[i][1]
+                if synap == 'pc_pv':  
+                    diff_per_change = (end_fr-start_fr)/(abs(0.776*79-0.776*38))
+                elif synap == 'pv_pv':
+                    diff_per_change = (end_fr-start_fr)/(abs(0.643*70-0.426*70))
+                elif synap == 'sst_pv': 
+                    diff_per_change = (end_fr-start_fr)/(abs(0.176*41-0.367*41))
+                elif synap == 'pv_sst': 
+                    diff_per_change = (end_fr-start_fr)/(abs(0.317*12-0.533*28))
+                elif synap == 'vip_sst': 
+                    diff_per_change = (end_fr-start_fr)/(abs(0.237*7-0.237*19))    
+                else:
+                    raise ValueError('Synapse nam eoutof range!')  
+                synap_diff.append(diff_per_change)
+                synap_name.append(synap)
+       
+            norm_diff+=synap_diff
+            name+=synap_name    
+            
+                
+   
+    data = np.column_stack((norm_diff, name))
+    #regroup the data into dataframe
+    df = pd.DataFrame(data=data, columns=['value', 'syn_name'])
+    df['value'] = df['value'].astype(float)   
+          
+
+    plt.figure(figsize=(6,10), dpi=100)
+    custom_params = {"axes.spines.right": False, "axes.spines.top": False}
+    sns.set_theme(style="ticks", rc=custom_params)    
+    bp = sns.barplot(x='syn_name', y='value', data=df, 
+                palette='colorblind', ci=68, capsize=.35, linewidth=1)   
+    bp = sns.stripplot(x='syn_name', y='value', data=df, jitter=0.25, 
+                 size=10, alpha=0.5, linewidth=0.5, dodge=True)
+    plt.ylabel('Evoked activity of '+celltype + ' (Hz)', size=20)
+    plt.xticks(rotation=45)
+
+    plt.tight_layout()
+    plt.savefig('./figures/syncontrib_'+cond+'_'+status+'_'+celltype+'.png')
+    plt.savefig('./figures/EPS/syncontrib_'+cond+'_'+status+'_'+celltype+'.eps')   
+
+def synaptic_contribution_plot(Results, cond, status, celltype):
+    """
+    plot the contribution of each varying synapses 
+    Input:
+        Results: storing the varying-synapse firing rate results of one cell type
+        condition:
+    """
+    
+    if status == 'MD1':
+        varied_synapses = ['pc_pv', 'pv_pc', 'vip_pc']
+    else: #MD4
+        varied_synapses = ['pc_pv', 'pv_pv', 'sst_pv', 'pv_sst', 'vip_sst']
     
     norm_diff = []
     name = []
@@ -727,34 +820,15 @@ def synaptic_contribution_plot(Results, celltype):
     for synap in varied_synapses:
         F_Neuron = Results[synap] 
 
-        if synap == 'pc_pv':
-            ND = []; Name = []
-            for i in range(len(F_Neuron)):
-                start_fr = F_Neuron[i][0]
-                end_fr = F_Neuron[i][1]
-                normalize_diff = (end_fr-start_fr)/(80-38)
-                ND.append(normalize_diff)
-                Name.append(synap)
-        elif synap == 'pv_sst':
-            ND = []; Name = []
-            for i in range(len(F_Neuron)):
-                start_fr = F_Neuron[i][0]
-                end_fr = F_Neuron[i][1]
-                normalize_diff = (end_fr-start_fr)/(28-10)
-                ND.append(normalize_diff)  
-                Name.append(synap)
-        elif synap == 'vip_sst':
-            ND = []; Name = []
-            for i in range(len(F_Neuron)):
-                start_fr = F_Neuron[i][0]
-                end_fr = F_Neuron[i][1]
-                normalize_diff = (end_fr-start_fr)/(18-10)
-                ND.append(normalize_diff) 
-                Name.append(synap)
-        else:
-            ValueError("Wrong Synapse Name, Check It.")
-        
-        norm_diff+=ND
+        Difference = []; Name = []
+        for i in range(len(F_Neuron)):
+            start_fr = F_Neuron[i][0]
+            end_fr = F_Neuron[i][1]
+            
+            Difference.append(end_fr-start_fr)
+            Name.append(synap)
+
+        norm_diff+=Difference
         name+=Name
    
     data = np.column_stack((norm_diff, name))
@@ -773,18 +847,9 @@ def synaptic_contribution_plot(Results, celltype):
     plt.ylabel('Evoked activity of '+celltype + ' (Hz)', size=20)
     plt.xticks(rotation=45)
 
-    if celltype == 'pc':
-        plt.ylim([-0.05, 0.01])    
-    elif celltype == 'pv':
-        plt.ylim([-0.05, 0.01])
-    elif celltype == 'sst':
-        plt.ylim([-0.01, 0.05])
-    elif celltype == 'vip':
-        plt.ylim([-0.05, 0.01])      
-    
     plt.tight_layout()
-    plt.savefig('./figures/percentage_'+celltype+'.png')
-    plt.savefig('./figures/EPS/percentage_'+celltype+'.eps')        
+    plt.savefig('./figures/syncontrib_'+cond+'_'+celltype+'.png')
+    plt.savefig('./figures/EPS/syncontrib_'+cond+'_'+celltype+'.eps')        
         
 def joint_varying(X, Y, Results_PC, Results_PV, Results_SST, Results_VIP, cond):
     """
