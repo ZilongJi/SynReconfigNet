@@ -761,6 +761,7 @@ def normed_synaptic_contribution_plot(Results, cond, status, celltype):
             for i in range(len(F_Neuron)):
                 start_fr = F_Neuron[i][0]
                 end_fr = F_Neuron[i][1]
+
                 if synap == 'pc_pv':  
                     diff_per_change = (end_fr-start_fr)/(abs(0.776*79-0.776*38))
                 elif synap == 'pv_pv':
@@ -772,7 +773,10 @@ def normed_synaptic_contribution_plot(Results, cond, status, celltype):
                 elif synap == 'vip_sst': 
                     diff_per_change = (end_fr-start_fr)/(abs(0.237*7-0.237*19))    
                 else:
-                    raise ValueError('Synapse nam eoutof range!')  
+                    raise ValueError('Synapse nam eoutof range!') 
+                    
+                #diff_per_change = end_fr-start_fr
+                
                 synap_diff.append(diff_per_change)
                 synap_name.append(synap)
        
@@ -794,12 +798,13 @@ def normed_synaptic_contribution_plot(Results, cond, status, celltype):
                 palette='colorblind', ci=68, capsize=.35, linewidth=1)   
     bp = sns.stripplot(x='syn_name', y='value', data=df, jitter=0.25, 
                  size=10, alpha=0.5, linewidth=0.5, dodge=True)
-    plt.ylabel('Evoked activity of '+celltype + ' (Hz)', size=20)
+
+    plt.ylabel(cond+' activity of '+celltype + ' (Hz)', size=20)
     plt.xticks(rotation=45)
 
     plt.tight_layout()
-    plt.savefig('./figures/syncontrib_'+cond+'_'+status+'_'+celltype+'.png')
-    plt.savefig('./figures/EPS/syncontrib_'+cond+'_'+status+'_'+celltype+'.eps')   
+    plt.savefig('./figures/zsyncontrib_'+cond+'_'+status+'_'+celltype+'.png')
+    plt.savefig('./figures/EPS/zsyncontrib_'+cond+'_'+status+'_'+celltype+'.eps')   
 
 def synaptic_contribution_plot(Results, cond, status, celltype):
     """
