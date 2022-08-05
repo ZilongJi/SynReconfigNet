@@ -20,7 +20,7 @@ from NeuronZoo import PCNeuron, PVNeuron, SSTNeuron, VIPNeuron
 from utils import SetConnectivity, violoin_plot
 
 bp.math.set_platform('cpu')
-seed=1234
+seed=123
 np.random.seed(seed)
 
 def build_model(noise_strength, state='control', cond='Spont.'):
@@ -34,19 +34,19 @@ def build_model(noise_strength, state='control', cond='Spont.'):
     #bottom-up input and top-down input
     if cond=='Spont.':
         # homogenous input 
-        x_s     =   18.8*bm.ones(num_pc)
+        x_s     =   25.0*bm.ones(num_pc)
         x_d     =   10.0*bm.ones(num_pc)
-        x_i_pv  =   3.1*bm.ones(num_pv)
-        x_i_sst =   1.9*bm.ones(num_sst)
-        x_i_vip =   1.4*bm.ones(num_vip)
+        x_i_pv  =   2.5*bm.ones(num_pv)
+        x_i_sst =   1.5*bm.ones(num_sst)
+        x_i_vip =   1.0*bm.ones(num_vip)
     elif cond=='Evoked':  
         # heterogeneous input
-        x_s     =   bm.concatenate((30.0*bm.ones(int(num_pc/4)), 20.4*bm.ones(num_pc-int(num_pc/4)))) #22.8
+        x_s     =   bm.concatenate((30.0*bm.ones(int(num_pc/4)), 15*bm.ones(num_pc-int(num_pc/4)))) #22.8
         x_d     =   10*bm.ones(num_pc)
         
-        x_i_pv  =   bm.concatenate((10.0*bm.ones(int(num_pv/4)), 6.1*bm.ones(num_pv-int(num_pv/4))))  #7.1
-        x_i_sst =   bm.concatenate((6.0*bm.ones(int(num_sst/4)), 2.4*bm.ones(num_sst-int(num_sst/4))))  #3.3
-        x_i_vip =   bm.concatenate((5.0*bm.ones(int(num_vip/4)), 2.1*bm.ones(num_vip-int(num_vip/4))))  #2.8   
+        x_i_pv  =   bm.concatenate((5.0*bm.ones(int(num_pv/4)), 0.6*bm.ones(num_pv-int(num_pv/4))))  #7.1
+        x_i_sst =   bm.concatenate((3.0*bm.ones(int(num_sst/4)), 0.6*bm.ones(num_sst-int(num_sst/4))))  #3.3
+        x_i_vip =   bm.concatenate((2.0*bm.ones(int(num_vip/4)), 0.6*bm.ones(num_vip-int(num_vip/4))))  #2.8   
     else:
         raise ValueError('Choose correct condition!')       
     
@@ -83,11 +83,11 @@ def build_model(noise_strength, state='control', cond='Spont.'):
     elif state == 'md4':
         if cond=='Spont.':
             #x_s = 18.8
-            x_s = 17.4*bm.ones(num_pc) # spontaneous: bottom up input decreased with MD 4 days 
+            x_s = 17.0*bm.ones(num_pc) # spontaneous: bottom up input decreased with MD 4 days 
         elif cond=='Evoked':
             #x_s = 22.8
             #x_s = 20.7*bm.ones(num_pc) # evoked: bottom up input decreased with MD 4 days 
-            x_s     =   bm.concatenate((28.0*bm.ones(int(num_pc/4)), 18.6*bm.ones(num_pc-int(num_pc/4)))) #22.8     
+            x_s     =   bm.concatenate((29*bm.ones(int(num_pc/4)), 15*bm.ones(num_pc-int(num_pc/4)))) #22.8     
         else:
             raise ValueError('Choose correct condition!')
         #Connection Probability (Data from Li Yao's experiment)
@@ -188,12 +188,12 @@ def run_trials(n_trials, noise_strength, state, cond):
 def do_stats(cond):
     
     if cond == 'Spont.':
-        n_trials = 10; noise_strength = 3.  #noise level
+        n_trials = 5; noise_strength = 5.  #noise level
         #n_trials = 1; noise_strength = 0.0 #noise level
         print('Modeling Spontaneous...') 
     elif cond == 'Evoked':
-        n_trials = 10; noise_strength = 10. #noise level
-        #n_trials = 1; noise_strength = 0. #noise level
+        #n_trials = 10; noise_strength = 10. #noise level
+        n_trials = 1; noise_strength = 0.0 #noise level
         print('Modeling Evoked...') 
     else:
         raise ValueError("Wrong Condition Name, Check It.")
@@ -222,5 +222,5 @@ def do_stats(cond):
 
 
 if __name__=='__main__':
-    #do_stats(cond = 'Spont.')
-    do_stats(cond = 'Evoked')
+    do_stats(cond = 'Spont.')
+    #do_stats(cond = 'Evoked')

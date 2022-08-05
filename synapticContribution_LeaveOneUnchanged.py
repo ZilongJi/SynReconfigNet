@@ -10,7 +10,7 @@ Synaptic contribution. Synapse ranking by varying all except one synapse
 import brainpy as bp
 import numpy as np
 import brainpy.math as bm
-from utils import SetConnectivity, synaptic_contribution_plot, normed_synaptic_contribution_plot
+from utils import SetConnectivity, normed_synaptic_contribution_plot, correlation_change_plot
 from NeuronZoo import PCNeuron, PVNeuron, SSTNeuron, VIPNeuron 
 
 bp.math.set_platform('cpu')
@@ -24,24 +24,23 @@ def build_model(Con_Stre, Con_Prob, cond):
     lambda_s = 0.31; lambda_d = 0.27
     c = 7; theta_c = 28
     theta_s = 14
-    noise_strength = 0
+    noise_strength = 5
     
     #bottom-up input and top-down input
     if cond=='Spont.':
         # homogenous input 
-        x_s     =   18.8*bm.ones(num_pc)
+        x_s     =   20.0*bm.ones(num_pc)
         x_d     =   10.0*bm.ones(num_pc)
-        x_i_pv  =   3.1*bm.ones(num_pv)
-        x_i_sst =   1.9*bm.ones(num_sst)
-        x_i_vip =   1.4*bm.ones(num_vip)
+        x_i_pv  =   2.5*bm.ones(num_pv)
+        x_i_sst =   1.5*bm.ones(num_sst)
+        x_i_vip =   1.0*bm.ones(num_vip)
     elif cond=='Evoked':  
-        # heterogeneous input
-        x_s     =   bm.concatenate((30.0*bm.ones(int(num_pc/4)), 20.4*bm.ones(num_pc-int(num_pc/4)))) #22.8
+        x_s     =   bm.concatenate((30.0*bm.ones(int(num_pc/4)), 15*bm.ones(num_pc-int(num_pc/4)))) #22.8
         x_d     =   10*bm.ones(num_pc)
         
-        x_i_pv  =   bm.concatenate((10.0*bm.ones(int(num_pv/4)), 6.1*bm.ones(num_pv-int(num_pv/4))))  #7.1
-        x_i_sst =   bm.concatenate((6.0*bm.ones(int(num_sst/4)), 2.4*bm.ones(num_sst-int(num_sst/4))))  #3.3
-        x_i_vip =   bm.concatenate((5.0*bm.ones(int(num_vip/4)), 2.1*bm.ones(num_vip-int(num_vip/4))))  #2.8   
+        x_i_pv  =   bm.concatenate((5.0*bm.ones(int(num_pv/4)), 0.6*bm.ones(num_pv-int(num_pv/4))))  #7.1
+        x_i_sst =   bm.concatenate((3.0*bm.ones(int(num_sst/4)), 0.6*bm.ones(num_sst-int(num_sst/4))))  #3.3
+        x_i_vip =   bm.concatenate((2.0*bm.ones(int(num_vip/4)), 0.6*bm.ones(num_vip-int(num_vip/4))))  #2.8  
     else:
         raise ValueError('Choose correct condition!')       
     
@@ -145,85 +144,85 @@ def generate_strength_prob_matrix(status):
     
     if status=='MD1':
         
-        Target_Stre = np.array([[8.,  -79.,  -8.,  0.],
-                                [34., -70.,  -12., -14.],
-                                [4.,  -41.,  0.,   -5.],
-                                [22., -35,   -7.,  0.]])   
+        MD_Stre = np.array([[8.,  -79.,  -8.,  0.],
+                            [34., -70.,  -12., -14.],
+                            [4.,  -41.,  0.,   -5.],
+                            [22., -35,   -7.,  0.]])   
         
         #Connection Probability (Data from Li Yao's experiment)
-        Target_Prob = np.array([[0.096,0.905,0.08,0.007],
-                                [0.622,0.643,0.317,0.088],
-                                [0.460,0.176,0.000,0.119],
-                                [0.245,0.239,0.237,0.000]])  
+        MD_Prob = np.array([[0.096,0.905,0.08,0.007],
+                            [0.622,0.643,0.317,0.088],
+                            [0.460,0.176,0.000,0.119],
+                            [0.245,0.239,0.237,0.000]])  
         
-        Strength['MD'] = Target_Stre
-        Probability['MD'] = Target_Prob       
+        Strength['MD'] = MD_Stre
+        Probability['MD'] = MD_Prob       
         
         #pc_pv
-        PcPv_Stre = Target_Stre.copy()
-        PcPv_Prob = Target_Prob.copy(); PcPv_Prob[0,1] = 0.776
+        PcPv_Stre = MD_Stre.copy()
+        PcPv_Prob = MD_Prob.copy(); PcPv_Prob[0,1] = 0.776
         
         Strength['pc_pv'] = PcPv_Stre
         Probability['pc_pv'] = PcPv_Prob
         
         #pv_pc
-        PvPc_Stre = Target_Stre.copy(); PvPc_Stre[1,0] = 22
-        PvPc_Prob = Target_Prob.copy()
+        PvPc_Stre = MD_Stre.copy(); PvPc_Stre[1,0] = 22
+        PvPc_Prob = MD_Prob.copy()
         
         Strength['pv_pc'] = PvPc_Stre
         Probability['pv_pc'] = PvPc_Prob   
         
         #vip_pc
-        VipPc_Stre = Target_Stre.copy(); VipPc_Stre[3,0] = 10
-        VipPc_Prob = Target_Prob.copy()
+        VipPc_Stre = MD_Stre.copy(); VipPc_Stre[3,0] = 10
+        VipPc_Prob = MD_Prob.copy()
         
         Strength['vip_pc'] = VipPc_Stre
         Probability['vip_pc'] = VipPc_Prob
     else: #MD4
-        Target_Stre = np.array([[8.,  -38.,  -8.,  0.],
-                                [22., -70.,  -28., -14.],
-                                [4.,  -41.,  0.,   -5.],
-                                [10., -35.,  -19,  0.]])
+        MD_Stre = np.array([[8.,  -38.,  -8.,  0.],
+                            [22., -70.,  -28., -14.],
+                            [4.,  -41.,  0.,   -5.],
+                            [10., -35.,  -19,  0.]])
         
-        Target_Prob = np.array([[0.096,0.776,0.08,0.007],
-                                [0.622,0.426,0.533,0.088],
-                                [0.460,0.367,0.000,0.119],
-                                [0.245,0.239,0.237,0.000]])    
+        MD_Prob = np.array([[0.096,0.776,0.08,0.007],
+                            [0.622,0.426,0.533,0.088],
+                            [0.460,0.367,0.000,0.119],
+                            [0.245,0.239,0.237,0.000]])    
 
-        Strength['MD'] = Target_Stre
-        Probability['MD'] = Target_Prob 
+        Strength['MD'] = MD_Stre
+        Probability['MD'] = MD_Prob 
         
         #pc_pv
-        PcPv_Stre = Target_Stre.copy(); PcPv_Stre[0,1] = -79
-        PcPv_Prob = Target_Prob.copy();       
+        PcPv_Stre = MD_Stre.copy(); PcPv_Stre[0,1] = -79
+        PcPv_Prob = MD_Prob.copy();       
         
         Strength['pc_pv'] = PcPv_Stre
         Probability['pc_pv'] = PcPv_Prob    
         
         #pv_pv
-        PvPv_Stre = Target_Stre.copy()
-        PvPv_Prob = Target_Prob.copy(); PvPv_Prob[1,1] = 0.643
+        PvPv_Stre = MD_Stre.copy(); 
+        PvPv_Prob = MD_Prob.copy(); PvPv_Prob[1,1] = 0.643
         
         Strength['pv_pv'] = PvPv_Stre
         Probability['pv_pv'] = PvPv_Prob 
 
         #sst_pv
-        SstPv_Stre = Target_Stre.copy()
-        SstPv_Prob = Target_Prob.copy(); SstPv_Prob[2,1] = 0.176
+        SstPv_Stre = MD_Stre.copy()
+        SstPv_Prob = MD_Prob.copy(); SstPv_Prob[2,1] = 0.176
         
         Strength['sst_pv'] = SstPv_Stre
         Probability['sst_pv'] = SstPv_Prob 
         
         #pv_sst
-        PvSst_Stre = Target_Stre.copy(); PvSst_Stre[1,2] = -12
-        PvSst_Prob =  Target_Prob.copy(); PvSst_Prob[1,2] = 0.317
+        PvSst_Stre = MD_Stre.copy(); PvSst_Stre[1,2] = -12
+        PvSst_Prob = MD_Prob.copy(); PvSst_Prob[1,2] = 0.317
 
         Strength['pv_sst'] = PvSst_Stre
         Probability['pv_sst'] = PvSst_Prob 
         
         #vip_sst
-        VipSst_Stre = Target_Stre.copy(); VipSst_Stre[3,2] = -7
-        VipSst_Prob =  Target_Prob.copy()
+        VipSst_Stre = MD_Stre.copy(); VipSst_Stre[3,2] = -7
+        VipSst_Prob = MD_Prob.copy()
         
         Strength['vip_sst'] = VipSst_Stre
         Probability['vip_sst'] = VipSst_Prob
@@ -244,6 +243,8 @@ def vary_per_synapse(cond, status, ntrial=10):
 
     Results_PC = {}; Results_PV = {}
     Results_SST = {}; Results_VIP = {}
+    CorrCoef = np.zeros((len(synapList), ntrial))
+    DiffPerChange = np.zeros((len(synapList), ntrial))
     
     for pre_i, pre in enumerate(PreSynap):
         for post_j, post in enumerate(PostSynap):    
@@ -251,14 +252,17 @@ def vary_per_synapse(cond, status, ntrial=10):
             synap_name = post+'_'+pre
             
             if synap_name in synapList:
+                
+                synap_idx = synapList.index(synap_name)
+                
                 print('simulating synapse '+synap_name)
                 ALL_PC = []; ALL_PV = []; ALL_SST = []; ALL_VIP = []
                 for i in range(ntrial):
                     print('trial {} control run'.format(i))
                     #get the mean firing rate in control group
-                    Ctrl_Stre = Strength['MD']
-                    Ctrl_Prob = Probability['MD']
-                    Ctrl_frvector, Ctrl_fpc, Ctrl_fpv, Ctrl_fsst, Ctrl_fvip =  get_fr_and_meanfr(Ctrl_Stre, Ctrl_Prob, cond)
+                    MD_Stre = Strength['MD']
+                    MD_Prob = Probability['MD']
+                    MD_frvector, MD_fpc, MD_fpv, MD_fsst, MD_fvip =  get_fr_and_meanfr(MD_Stre, MD_Prob, cond)
                     
                     print('trial {} target run'.format(i))
                     #vary one synapse and get the mean firing rate
@@ -266,28 +270,68 @@ def vary_per_synapse(cond, status, ntrial=10):
                     target_Prob = Probability[synap_name]
                     target_frvector, target_fpc, target_fpv, target_fsst, target_fvip = get_fr_and_meanfr(target_Stre, target_Prob, cond)
                     
-                    ALL_PC.append([Ctrl_fpc,target_fpc])
-                    ALL_PV.append([Ctrl_fpv,target_fpv])
-                    ALL_SST.append([Ctrl_fsst,target_fsst])
-                    ALL_VIP.append([Ctrl_fvip,target_fvip])
+                    ALL_PC.append([MD_fpc,target_fpc])
+                    ALL_PV.append([MD_fpv,target_fpv])
+                    ALL_SST.append([MD_fpv,target_fsst])
+                    ALL_VIP.append([MD_fvip,target_fvip])
                     
                     #compute the correlation coeficient
+                    '''
+                    cc = np.corrcoef(MD_frvector,target_frvector)[0,1]
+                    '''
+                    MD_frvector = np.asarray([MD_fpc, MD_fpv, MD_fsst, MD_fvip])
+                    target_frvector = np.asarray([target_fpc, target_fpv, target_fsst, target_fvip])
+                    cc = np.corrcoef(MD_frvector,target_frvector)[0,1]
+                    
+                    CorrCoef[synap_idx, i] = cc
+                    
+                    if status == 'MD1':
+                        if synap_name == 'pc_pv':
+                            diff_per_change = (1-cc)/(abs(0.776*79-0.905*79))
+                        elif synap_name == 'pv_pc': 
+                            diff_per_change = (1-cc)/(abs(0.622*22-0.622*34))
+                        elif synap_name == 'vip_pc': 
+                            diff_per_change = (1-cc)/(abs(0.245*10-0.245*22))
+                        else:
+                            raise ValueError('Synapse name out of range!') 
+                    else:
+                        #calculate difference per change
+                        if synap_name == 'pc_pv':  
+                            diff_per_change = (1-cc)/(abs(0.776*79-0.776*38))
+                        elif synap_name == 'pv_pv':
+                            diff_per_change = (1-cc)/(abs(0.643*70-0.426*70))
+                        elif synap_name == 'sst_pv': 
+                            diff_per_change = (1-cc)/(abs(0.176*41-0.367*41))
+                        elif synap_name == 'pv_sst': 
+                            diff_per_change = (1-cc)/(abs(0.317*12-0.533*28))
+                        elif synap_name == 'vip_sst': 
+                            diff_per_change = (1-cc)/(abs(0.237*7-0.237*19))    
+                        else:
+                            raise ValueError('Synapse name out of range!') 
+                    
+                    DiffPerChange[synap_idx, i] = diff_per_change
+                    
                     
                 Results_PC[synap_name] = ALL_PC
                 Results_PV[synap_name] = ALL_PV
                 Results_SST[synap_name] = ALL_SST
                 Results_VIP[synap_name] = ALL_VIP
     
-    return Results_PC, Results_PV, Results_SST, Results_VIP
+    return Results_PC, Results_PV, Results_SST, Results_VIP, CorrCoef, DiffPerChange
 
 if __name__=='__main__':
-    cond = 'Evoked'
+    cond = 'Spont.'
     status='MD4'
-    Results_PC, Results_PV, Results_SST, Results_VIP = vary_per_synapse(cond, status, 1) #number of trials
-    #%%
+    Results_PC, Results_PV, Results_SST, Results_VIP, CorrCoef, DiffPerChange = vary_per_synapse(cond, status, 1) #number of trials
+    #%% 
     normed_synaptic_contribution_plot(Results_PC, cond, status, celltype='pc')
     normed_synaptic_contribution_plot(Results_PV, cond, status, celltype='pv')
     normed_synaptic_contribution_plot(Results_SST, cond, status, celltype='sst')
     normed_synaptic_contribution_plot(Results_VIP, cond, status, celltype='vip')
-
+    
+    #%% correlation change plot
+    if status=='MD4':
+        correlation_change_plot(DiffPerChange, status, synapList=['pc_pv', 'pv_pv', 'sst_pv', 'pv_sst', 'vip_sst'])
+    else:
+        correlation_change_plot(DiffPerChange, status, synapList=['pc_pv', 'pv_pc', 'vip_pc'])
     

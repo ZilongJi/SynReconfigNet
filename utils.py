@@ -82,13 +82,15 @@ def SetConnectivity(Con_Prob, Con_Stre, NC):
         if NCon[m,n]>0: #if there are connections, go to the next step
             if m==n: #connection between the neurons in same type, omit the autapse
                 for l in range(NC[m]):
-                    weight = Con_Stre[m,n]*np.array([0] * (NC[n]-1-NCon[m,n]) + [1] * NCon[m,n])/NCon[m,n]
+                    #weight = Con_Stre[m,n]*np.array([0] * (NC[n]-1-NCon[m,n]) + [1] * NCon[m,n])/NCon[m,n]
+                    weight = Con_Stre[m,n]*np.array([0] * (NC[n]-1-NCon[m,n]) + [1] * NCon[m,n])/100
                     np.random.shuffle(weight)
                     weight = np.insert(weight,l,0)
                     Mtx[l,:] = weight
             else: #connection between the neurons in different types
                 for l in range(NC[m]):
-                    weight = Con_Stre[m,n]*np.array([0] * (NC[n]-NCon[m,n]) + [1] * NCon[m,n])/NCon[m,n]
+                    #weight = Con_Stre[m,n]*np.array([0] * (NC[n]-NCon[m,n]) + [1] * NCon[m,n])/NCon[m,n]
+                    weight = Con_Stre[m,n]*np.array([0] * (NC[n]-NCon[m,n]) + [1] * NCon[m,n])/100
                     np.random.shuffle(weight)
                     Mtx[l,:] = weight
         
@@ -899,6 +901,24 @@ def joint_varying(X, Y, Results_PC, Results_PV, Results_SST, Results_VIP, cond):
     plt.savefig('./figures/joint_varying_synapses_'+cond+'.png')
     plt.savefig('./figures/EPS/joint_varying_synapses_'+cond+'.eps')
     
-        
+def correlation_change_plot(DiffPerChange, status, synapList):
+    """
+    plot the correlation change per synapse (after normalized by the change value)
+    """
+    fig, ax = plt.subplots(figsize=(10,5), dpi=100)
+    
+    column_mean = np.mean(DiffPerChange, axis=1)
+    column_std = np.std(DiffPerChange, axis=1)
+    
+    X = np.arange(1,len(synapList)+1,1)
+    ax.bar(X, column_mean.T, yerr=column_std.T, align='center', alpha=0.5, ecolor='black', capsize=10)
+    ax.set_xticks(X)
+    ax.set_xticklabels(synapList)
+    ax.set_ylabel('similarity change per unit')
+    
+    plt.tight_layout()
+    plt.savefig('./figures/CorrDiffPerChange_'+status+'.png')
+    plt.savefig('./figures/EPS/CorrDiffPerChange_'+status+'.eps')   
+    
         
     
