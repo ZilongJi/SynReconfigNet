@@ -83,7 +83,7 @@ class PCNeuron(bp.dyn.NeuGroup):
         #5, calculate the total input to the soma from generating firing rate
         
         I_total = (1-self.lambda_s)*I_S + self.lambda_d*d_current \
-            + self.noise_strength*self.rng.randn(self.num)
+            + bm.sqrt(self.tau/0.1)*self.noise_strength*self.rng.randn(self.num)
         
         self.I_S.value  = I_S
         self.I_D[:]  = I_D
@@ -136,7 +136,7 @@ class PVNeuron(bp.dyn.NeuGroup):
         vip_input   =   bm.dot(self.W_pv_vip, self.VIP.r_vip)
         
         I_total     =   self.x_i + pc_input + pv_input + sst_input + vip_input \
-                        + self.noise_strength*self.rng.randn(self.num)
+                        + bm.sqrt(self.tau/0.1)*self.noise_strength*self.rng.randn(self.num)
         
         r_pv        =   self.integral(self.r_pv, _t, I_total, _dt)
         
@@ -189,7 +189,7 @@ class SSTNeuron(bp.dyn.NeuGroup):
         vip_input   =   bm.dot(self.W_sst_vip, self.VIP.r_vip)        
         
         I_total     =   self.x_i + pc_input + pv_input + sst_input + vip_input \
-                        + self.noise_strength*self.rng.randn(self.num)
+                        + bm.sqrt(self.tau/0.1)*self.noise_strength*self.rng.randn(self.num)
         
         r_sst       =   self.integral(self.r_sst, _t, I_total, _dt)
         
@@ -241,7 +241,7 @@ class VIPNeuron(bp.dyn.NeuGroup):
         vip_input   =   bm.dot(self.W_vip_vip, self.r_vip)   
         
         I_total     =    self.x_i + pc_input + pv_input + sst_input + vip_input \
-                        + self.noise_strength*self.rng.randn(self.num)
+                        + bm.sqrt(self.tau/0.1)*self.noise_strength*self.rng.randn(self.num)
         
         r_vip = self.integral(self.r_vip, _t, I_total, _dt)
         

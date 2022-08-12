@@ -24,23 +24,23 @@ def build_model(Con_Stre, Con_Prob, cond):
     lambda_s = 0.31; lambda_d = 0.27
     c = 7; theta_c = 28
     theta_s = 14
-    noise_strength = 5
+    noise_strength = 0.5
     
     #bottom-up input and top-down input
     if cond=='Spont.':
         # homogenous input 
-        x_s     =   20.0*bm.ones(num_pc)
+        x_s     =   18.4*bm.ones(num_pc)
         x_d     =   10.0*bm.ones(num_pc)
-        x_i_pv  =   2.5*bm.ones(num_pv)
-        x_i_sst =   1.5*bm.ones(num_sst)
-        x_i_vip =   1.0*bm.ones(num_vip)
+        x_i_pv  =   1.9*bm.ones(num_pv)
+        x_i_sst =   1.2*bm.ones(num_sst)
+        x_i_vip =   0.6*bm.ones(num_vip)
     elif cond=='Evoked':  
-        x_s     =   bm.concatenate((30.0*bm.ones(int(num_pc/4)), 15*bm.ones(num_pc-int(num_pc/4)))) #22.8
+        x_s     =   bm.concatenate((23.8*bm.ones(int(num_pc/4)), 16.5*bm.ones(num_pc-int(num_pc/4)))) #22.8
         x_d     =   10*bm.ones(num_pc)
         
-        x_i_pv  =   bm.concatenate((5.0*bm.ones(int(num_pv/4)), 0.6*bm.ones(num_pv-int(num_pv/4))))  #7.1
+        x_i_pv  =   bm.concatenate((4.0*bm.ones(int(num_pv/4)), 1.2*bm.ones(num_pv-int(num_pv/4))))  #7.1
         x_i_sst =   bm.concatenate((3.0*bm.ones(int(num_sst/4)), 0.6*bm.ones(num_sst-int(num_sst/4))))  #3.3
-        x_i_vip =   bm.concatenate((2.0*bm.ones(int(num_vip/4)), 0.6*bm.ones(num_vip-int(num_vip/4))))  #2.8  
+        x_i_vip =   bm.concatenate((2.0*bm.ones(int(num_vip/4)), 0.1*bm.ones(num_vip-int(num_vip/4))))  #2.8  
     else:
         raise ValueError('Choose correct condition!')       
     
@@ -276,13 +276,13 @@ def vary_per_synapse(cond, status, ntrial=10):
                     ALL_VIP.append([MD_fvip,target_fvip])
                     
                     #compute the correlation coeficient
-                    '''
+                    
                     cc = np.corrcoef(MD_frvector,target_frvector)[0,1]
                     '''
                     MD_frvector = np.asarray([MD_fpc, MD_fpv, MD_fsst, MD_fvip])
                     target_frvector = np.asarray([target_fpc, target_fpv, target_fsst, target_fvip])
                     cc = np.corrcoef(MD_frvector,target_frvector)[0,1]
-                    
+                    '''
                     CorrCoef[synap_idx, i] = cc
                     
                     if status == 'MD1':
@@ -320,9 +320,9 @@ def vary_per_synapse(cond, status, ntrial=10):
     return Results_PC, Results_PV, Results_SST, Results_VIP, CorrCoef, DiffPerChange
 
 if __name__=='__main__':
-    cond = 'Spont.'
+    cond = 'Evoked'
     status='MD4'
-    Results_PC, Results_PV, Results_SST, Results_VIP, CorrCoef, DiffPerChange = vary_per_synapse(cond, status, 1) #number of trials
+    Results_PC, Results_PV, Results_SST, Results_VIP, CorrCoef, DiffPerChange = vary_per_synapse(cond, status, 5) #number of trials
     #%% 
     normed_synaptic_contribution_plot(Results_PC, cond, status, celltype='pc')
     normed_synaptic_contribution_plot(Results_PV, cond, status, celltype='pv')

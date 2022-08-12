@@ -282,8 +282,11 @@ def violoin_plot(ctrl1, md1, ctrl2, md4, cond, celltype):
     plt.xticks(fontsize=20); plt.yticks(fontsize=20)        
     
     #Perform the Mann-Whitney U rank test on two independent samples.
-    _, P_ctrl_md1 = stats.mannwhitneyu(ctrl1, md1)
-    _, P_ctrl_md4 = stats.mannwhitneyu(ctrl2, md4)
+    #_, P_ctrl_md1 = stats.mannwhitneyu(ctrl1, md1)
+    #_, P_ctrl_md4 = stats.mannwhitneyu(ctrl2, md4)
+    
+    _, P_ctrl_md1 = stats.ttest_ind(ctrl1, md1)
+    _, P_ctrl_md4 = stats.ttest_ind(ctrl2, md4)
     
     
     plt.title('P value of Ctrl vs. MD1 {:.3f}, Ctrl vs. MD4 {:.3f}'\
