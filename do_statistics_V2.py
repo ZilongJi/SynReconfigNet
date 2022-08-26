@@ -35,11 +35,20 @@ def build_model(noise_strength, state='control', cond='Spont.'):
     #bottom-up input and top-down input
     if cond=='Spont.':
         # homogenous input 
+
         x_s     =   18.4*bm.ones(num_pc)
         x_d     =   10.0*bm.ones(num_pc)
         x_i_pv  =   1.9*bm.ones(num_pv)
         x_i_sst =   1.2*bm.ones(num_sst)
         x_i_vip =   0.6*bm.ones(num_vip)
+
+        '''
+        x_s     =   20.0*bm.ones(num_pc)
+        x_d     =   20.0*bm.ones(num_pc)
+        x_i_pv  =   3.0*bm.ones(num_pv)
+        x_i_sst =   2.0*bm.ones(num_sst)
+        x_i_vip =   1.0*bm.ones(num_vip)
+        '''
     elif cond=='Evoked':  
         # heterogeneous input
         x_s     =   bm.concatenate((23.8*bm.ones(int(num_pc/4)), 16.5*bm.ones(num_pc-int(num_pc/4)))) #22.8
@@ -83,7 +92,7 @@ def build_model(noise_strength, state='control', cond='Spont.'):
         Con_Stre = Con_Stre/79.0
     elif state == 'md4':
         if cond=='Spont.':
-            x_s = 14.
+            x_s = 16.
             #aaa=1
             #x_s = 19.0*bm.ones(num_pc) # spontaneous: bottom up input decreased with MD 4 days 
         elif cond=='Evoked':
@@ -188,12 +197,12 @@ def run_trials(n_trials, noise_strength, state, cond):
 def do_stats(cond):
     
     if cond == 'Spont.':
-        n_trials = 20; noise_strength = 0.3 #noise level
+        n_trials = 10; noise_strength = 0.5 #noise level
         #n_trials = 1; noise_strength = 0.0 #noise level
         print('Modeling Spontaneous...') 
     elif cond == 'Evoked':
         #n_trials = 10; noise_strength = 10. #noise level
-        n_trials = 20; noise_strength = 0.6 #noise level
+        n_trials = 10; noise_strength = 0.6 #noise level
         print('Modeling Evoked...') 
     else:
         raise ValueError("Wrong Condition Name, Check It.")
@@ -222,5 +231,5 @@ def do_stats(cond):
 
 
 if __name__=='__main__':
-    #do_stats(cond = 'Spont.')
-    do_stats(cond = 'Evoked')
+    do_stats(cond = 'Spont.')
+    #do_stats(cond = 'Evoked')

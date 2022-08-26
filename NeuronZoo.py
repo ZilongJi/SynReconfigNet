@@ -51,6 +51,7 @@ class PCNeuron(bp.dyn.NeuGroup):
     def derivative(self, r_pc, t, I_total):    
         I_total_thres = I_total - self.theta_s
         I_total_thres = bm.where(I_total_thres < 0, 0, I_total_thres)
+        #I_total_thres = bm.activations.relu6(I_total_thres)
         # I_total_thres[I_total_thres < 0] = 0
         dr_pc = 1. / self.tau * (-r_pc + I_total_thres)
         return dr_pc
@@ -78,6 +79,7 @@ class PCNeuron(bp.dyn.NeuGroup):
         #4, calculate the total input coming from the dendrites, should be non-negative
         d_current = I_D + I_D0
         d_current = bm.where(d_current < 0, 0, d_current)
+        #d_current = bm.activations.relu6(d_current)
         # d_current[d_current<0] = 0
 
         #5, calculate the total input to the soma from generating firing rate

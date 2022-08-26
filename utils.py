@@ -82,15 +82,15 @@ def SetConnectivity(Con_Prob, Con_Stre, NC):
         if NCon[m,n]>0: #if there are connections, go to the next step
             if m==n: #connection between the neurons in same type, omit the autapse
                 for l in range(NC[m]):
-                    #weight = Con_Stre[m,n]*np.array([0] * (NC[n]-1-NCon[m,n]) + [1] * NCon[m,n])/NCon[m,n]
-                    weight = Con_Stre[m,n]*np.array([0] * (NC[n]-1-NCon[m,n]) + [1] * NCon[m,n])/100
+                    weight = Con_Stre[m,n]*np.array([0] * (NC[n]-1-NCon[m,n]) + [1] * NCon[m,n])/NCon[m,n]
+                    #weight = Con_Stre[m,n]*np.array([0] * (NC[n]-1-NCon[m,n]) + [1] * NCon[m,n])/1000
                     np.random.shuffle(weight)
                     weight = np.insert(weight,l,0)
                     Mtx[l,:] = weight
             else: #connection between the neurons in different types
                 for l in range(NC[m]):
-                    #weight = Con_Stre[m,n]*np.array([0] * (NC[n]-NCon[m,n]) + [1] * NCon[m,n])/NCon[m,n]
-                    weight = Con_Stre[m,n]*np.array([0] * (NC[n]-NCon[m,n]) + [1] * NCon[m,n])/100
+                    weight = Con_Stre[m,n]*np.array([0] * (NC[n]-NCon[m,n]) + [1] * NCon[m,n])/NCon[m,n]
+                    #weight = Con_Stre[m,n]*np.array([0] * (NC[n]-NCon[m,n]) + [1] * NCon[m,n])/1000
                     np.random.shuffle(weight)
                     Mtx[l,:] = weight
         
