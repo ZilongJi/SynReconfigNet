@@ -36,23 +36,16 @@ def build_model(noise_strength, state='control', cond='Spont.'):
     if cond=='Spont.':
         # homogenous input 
 
-        x_s     =   18.4*bm.ones(num_pc)
-        x_d     =   10.0*bm.ones(num_pc)
-        x_i_pv  =   1.9*bm.ones(num_pv)
-        x_i_sst =   1.2*bm.ones(num_sst)
-        x_i_vip =   0.6*bm.ones(num_vip)
-
-        '''
-        x_s     =   20.0*bm.ones(num_pc)
-        x_d     =   20.0*bm.ones(num_pc)
-        x_i_pv  =   3.0*bm.ones(num_pv)
+        x_s     =   18.0*bm.ones(num_pc)
+        x_d     =   5.0*bm.ones(num_pc)
+        x_i_pv  =   3.1*bm.ones(num_pv)
         x_i_sst =   2.0*bm.ones(num_sst)
-        x_i_vip =   1.0*bm.ones(num_vip)
-        '''
+        x_i_vip =   1.4*bm.ones(num_vip)
+
     elif cond=='Evoked':  
         # heterogeneous input
-        x_s     =   bm.concatenate((23.8*bm.ones(int(num_pc/4)), 16.5*bm.ones(num_pc-int(num_pc/4)))) #22.8
-        x_d     =   10*bm.ones(num_pc)
+        x_s     =   bm.concatenate((20.8*bm.ones(int(num_pc/4)), 13.5*bm.ones(num_pc-int(num_pc/4)))) #22.8
+        x_d     =   5*bm.ones(num_pc)
         
         x_i_pv  =   bm.concatenate((4.0*bm.ones(int(num_pv/4)), 1.2*bm.ones(num_pv-int(num_pv/4))))  #7.1
         x_i_sst =   bm.concatenate((3.0*bm.ones(int(num_sst/4)), 0.6*bm.ones(num_sst-int(num_sst/4))))  #3.3
@@ -92,13 +85,13 @@ def build_model(noise_strength, state='control', cond='Spont.'):
         Con_Stre = Con_Stre/79.0
     elif state == 'md4':
         if cond=='Spont.':
-            x_s = 16.
+            x_s = 16.0
             #aaa=1
             #x_s = 19.0*bm.ones(num_pc) # spontaneous: bottom up input decreased with MD 4 days 
         elif cond=='Evoked':
             #x_s = 22.8
             #x_s = 20.7*bm.ones(num_pc) # evoked: bottom up input decreased with MD 4 days 
-            x_s     =   bm.concatenate((22.8*bm.ones(int(num_pc/4)), 15.3*bm.ones(num_pc-int(num_pc/4)))) #22.8     
+            x_s     =   bm.concatenate((20.3*bm.ones(int(num_pc/4)), 13.0*bm.ones(num_pc-int(num_pc/4)))) #22.8     
             #aaa=1
         else:
             raise ValueError('Choose correct condition!')
@@ -176,7 +169,7 @@ def run_trials(n_trials, noise_strength, state, cond):
         runner.run(duration=1000)
         
         #for each trial, random sampling 5 neurons
-        n_cells = 1
+        n_cells = 3
         idx = np.random.choice(int(pcs.size/4), n_cells, replace=False)
         pc_samples = runner.mon['PC.r_pc'][-1,idx]; PC_Sam.append(pc_samples)
         
@@ -231,5 +224,5 @@ def do_stats(cond):
 
 
 if __name__=='__main__':
-    do_stats(cond = 'Spont.')
-    #do_stats(cond = 'Evoked')
+    #do_stats(cond = 'Spont.')
+    do_stats(cond = 'Evoked')

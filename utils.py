@@ -83,14 +83,14 @@ def SetConnectivity(Con_Prob, Con_Stre, NC):
             if m==n: #connection between the neurons in same type, omit the autapse
                 for l in range(NC[m]):
                     weight = Con_Stre[m,n]*np.array([0] * (NC[n]-1-NCon[m,n]) + [1] * NCon[m,n])/NCon[m,n]
-                    #weight = Con_Stre[m,n]*np.array([0] * (NC[n]-1-NCon[m,n]) + [1] * NCon[m,n])/1000
+                    #weight = Con_Stre[m,n]*np.array([0] * (NC[n]-1-NCon[m,n]) + [1] * NCon[m,n])/100
                     np.random.shuffle(weight)
                     weight = np.insert(weight,l,0)
                     Mtx[l,:] = weight
             else: #connection between the neurons in different types
                 for l in range(NC[m]):
                     weight = Con_Stre[m,n]*np.array([0] * (NC[n]-NCon[m,n]) + [1] * NCon[m,n])/NCon[m,n]
-                    #weight = Con_Stre[m,n]*np.array([0] * (NC[n]-NCon[m,n]) + [1] * NCon[m,n])/1000
+                    #weight = Con_Stre[m,n]*np.array([0] * (NC[n]-NCon[m,n]) + [1] * NCon[m,n])/100
                     np.random.shuffle(weight)
                     Mtx[l,:] = weight
         
@@ -916,12 +916,58 @@ def correlation_change_plot(DiffPerChange, status, synapList):
     X = np.arange(1,len(synapList)+1,1)
     ax.bar(X, column_mean.T, yerr=column_std.T, align='center', alpha=0.5, ecolor='black', capsize=10)
     ax.set_xticks(X)
-    ax.set_xticklabels(synapList)
-    ax.set_ylabel('similarity change per unit')
+    ax.set_xticklabels(synapList, rotation=45, ha='right')
+    ax.set_ylabel('Synaptic contribution', fontsize=20)
+    plt.ticklabel_format(axis="y", style="sci", scilimits=(0,0))
     
     plt.tight_layout()
     plt.savefig('./figures/CorrDiffPerChange_'+status+'.png')
-    plt.savefig('./figures/EPS/CorrDiffPerChange_'+status+'.eps')   
+    plt.savefig('./figures/EPS/CorrDiffPerChange_'+status+'.eps') 
+    
+def correlation_change_matrixplot(DiffPerChange_matrix, status, synapList):
+    """
+    plot the correlation change matrix (after normalized by the change value)
+    """
+    if status=='MD1':
+        Num = 3
+    else:
+        Num = 7
+        
+    X = 1/np.abs(np.log(DiffPerChange_matrix))
+    
+    fig, ax = plt.subplots(figsize=(10,10), dpi=100)
+    ax.set_xticks(np.arange(0,4,1))
+    ax.set_xticklabels(['PC', 'PV', 'SST', 'VIP'], fontsize=20)
+    ax.set_yticks(np.arange(0,Num,1))
+    ax.set_yticklabels(synapList, fontsize=20)    
+    plt.hlines(y=np.arange(0, Num)+0.5, xmin=np.full(Num, 0)-0.5, xmax=np.full(Num, 4)-0.5, color="white")
+    plt.vlines(x=np.arange(0, 4)+0.5, ymin=np.full(4, 0)-0.5, ymax=np.full(4, Num)-0.5, color="white")
+    plt.imshow(X, cmap='Blues', aspect=0.8)
+    plt.colorbar(location='right', shrink=0.5)
+
+    plt.savefig('./figures/CorrDiffMatrixPerChange_'+status+'.png')
+    plt.savefig('./figures/EPS/CorrDiffMatrixPerChange_'+status+'.eps') 
+    
+def plot_activity_reproduce_index(name, rp_index, status):
+    """
+    matrix plot of the activity reproducing index 
+    """
+    
+    Num = len(name)
+    
+    fig, ax = plt.subplots(figsize=(20,10), dpi=100)
+    ax.set_xticks(np.arange(0,4,1))
+    ax.set_xticklabels(['PC', 'PV', 'SST', 'VIP'], fontsize=20)
+    ax.set_yticks(np.arange(0,Num,1))
+    ax.set_yticklabels(name, fontsize=20)     
+    plt.hlines(y=np.arange(0, Num)+0.5, xmin=np.full(Num, 0)-0.5, xmax=np.full(Num, 4)-0.5, color="white")
+    plt.vlines(x=np.arange(0, 4)+0.5, ymin=np.full(4, 0)-0.5, ymax=np.full(4, Num)-0.5, color="white")    
+
+    plt.imshow(rp_index, cmap='RdBu', aspect=0.3, vmin=np.min(rp_index), vmax=-np.min(rp_index))
+    plt.colorbar(location='right', shrink=0.5)    
+    
+    plt.savefig('./figures/reproduce_index_'+status+'.png')
+    plt.savefig('./figures/EPS/reproduce_index_'+status+'.eps')     
     
         
     

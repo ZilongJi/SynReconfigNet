@@ -29,14 +29,14 @@ def build_model(Con_Stre, Con_Prob, cond):
     #bottom-up input and top-down input
     if cond=='Spont.':
         # homogenous input 
-        x_s     =   18.4*bm.ones(num_pc)
-        x_d     =   10.0*bm.ones(num_pc)
-        x_i_pv  =   1.9*bm.ones(num_pv)
-        x_i_sst =   1.2*bm.ones(num_sst)
-        x_i_vip =   0.6*bm.ones(num_vip)
+        x_s     =   18.0*bm.ones(num_pc)
+        x_d     =   5.0*bm.ones(num_pc)
+        x_i_pv  =   3.1*bm.ones(num_pv)
+        x_i_sst =   2.0*bm.ones(num_sst)
+        x_i_vip =   1.4*bm.ones(num_vip)
     elif cond=='Evoked':  
-        x_s     =   bm.concatenate((23.8*bm.ones(int(num_pc/4)), 16.5*bm.ones(num_pc-int(num_pc/4)))) #22.8
-        x_d     =   10*bm.ones(num_pc)
+        x_s     =   bm.concatenate((20.8*bm.ones(int(num_pc/4)), 13.5*bm.ones(num_pc-int(num_pc/4)))) #22.8
+        x_d     =   5*bm.ones(num_pc)
         
         x_i_pv  =   bm.concatenate((4.0*bm.ones(int(num_pv/4)), 1.2*bm.ones(num_pv-int(num_pv/4))))  #7.1
         x_i_sst =   bm.concatenate((3.0*bm.ones(int(num_sst/4)), 0.6*bm.ones(num_sst-int(num_sst/4))))  #3.3
@@ -320,7 +320,7 @@ def vary_per_synapse(cond, status, ntrial=10):
     return Results_PC, Results_PV, Results_SST, Results_VIP, CorrCoef, DiffPerChange
 
 if __name__=='__main__':
-    cond = 'Evoked'
+    cond = 'Spont.'
     status='MD4'
     Results_PC, Results_PV, Results_SST, Results_VIP, CorrCoef, DiffPerChange = vary_per_synapse(cond, status, 5) #number of trials
     #%% 
