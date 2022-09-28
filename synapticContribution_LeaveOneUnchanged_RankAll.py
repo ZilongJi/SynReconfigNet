@@ -356,9 +356,9 @@ def vary_per_synapse(cond, status, ntrial=10):
     return  CorrCoef, DiffPerChange, CorrCoef_matrix, DiffPerChange_matrix
 
 if __name__=='__main__':
-    #cond = 'Spont.'
-    cond = 'Evoked'
-    status='MD1'
+    cond = 'Spont.'
+    #cond = 'Evoked'
+    status='MD4'
     CorrCoef, DiffPerChange, CorrCoef_matrix, DiffPerChange_matrix = vary_per_synapse(cond, status, 5) #number of trials
     
     #%% correlation change plot

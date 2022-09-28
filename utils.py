@@ -969,5 +969,34 @@ def plot_activity_reproduce_index(name, rp_index, status):
     plt.savefig('./figures/reproduce_index_'+status+'.png')
     plt.savefig('./figures/EPS/reproduce_index_'+status+'.eps')     
     
+def synaptic_ranking_plot(DiffPerChange, SynapName, cond):
+    """
+    synaptic ranking of 16 synapses
+    """
+    fig, ax = plt.subplots(figsize=(20,10), dpi=100)
+    
+    column_mean = np.mean(DiffPerChange, axis=1)
+    column_std = np.std(DiffPerChange, axis=1)
+    
+    temp_mean = -column_mean
+    index = temp_mean.argsort()
+    column_mean = column_mean[index]
+    column_std = column_std[index]
+    SynapName = [SynapName[i] for i in index]
+    
+    
+    X = np.arange(1,len(SynapName)+1,1)
+    ax.bar(X, column_mean.T, yerr=column_std.T, align='center', alpha=0.5, ecolor='black', capsize=10)
+    ax.set_xticks(X)
+    ax.set_xticklabels(SynapName, rotation=45, ha='right', fontsize=20)
+    ax.set_ylabel('Synaptic contribution', fontsize=20)
+    plt.ticklabel_format(axis="y", style="sci", scilimits=(0,0))
+    
+    plt.tight_layout()
+    plt.savefig('./figures/SynapticRanking_'+cond+'.png')
+    plt.savefig('./figures/EPS/SynapticRanking_'+cond+'.eps')    
+    
+    
+    
         
     
