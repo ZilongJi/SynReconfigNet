@@ -197,7 +197,8 @@ def main(cond, status):
     
     #get activity in sub-change group 
     if status == 'MD1':
-        synapList=['pc_pv', 'pv_pc', 'vip_pc']
+        #synapList=['pc_pv', 'pv_pc', 'vip_pc']
+        synapList=['pv_pc', 'vip_pc']
     elif status == 'MD4':
         #synapList=['pc_pv', 'pv_pv', 'sst_pv', 'pv_sst', 'vip_sst']
         synapList=['pc_pv',  'pv_sst', 'vip_sst']
@@ -221,7 +222,7 @@ def main(cond, status):
                 target_Stre[row, column] = MD_Stre[row, column]
                 target_Prob[row, column] = MD_Prob[row, column]
                 
-                string += synap_name+' '
+                string += synap_name+'\n '
             #get activity based on target_Stre and target_Prob
             target_meanfr = get_meanfr(target_Stre, target_Prob, cond, status)
                 

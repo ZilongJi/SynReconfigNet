@@ -142,8 +142,8 @@ def main(cond, delta_stre = 10, ntrial=10):
     PreSynap = ['pc', 'pv', 'sst', 'vip']
     PostSynap = ['pc', 'pv', 'sst', 'vip']
 
-    CorrCoef = np.zeros((16, ntrial))
-    DiffPerChange = np.zeros((16, ntrial))  
+    CorrCoef = np.zeros((13, ntrial))
+    DiffPerChange = np.zeros((13, ntrial))  
     
     SynapName = []
     
@@ -153,6 +153,10 @@ def main(cond, delta_stre = 10, ntrial=10):
         for post_j, post in enumerate(PostSynap): 
             
             synap_name = post+'_'+pre
+            
+            if synap_name in ['pc_vip', 'sst_sst', 'vip_vip']:
+                continue
+            
             SynapName.append(synap_name)
             print('simulating synapse '+synap_name)
  
@@ -160,7 +164,13 @@ def main(cond, delta_stre = 10, ntrial=10):
             Target_Stre = Ctrl_Stre.copy()
             
             stre = Target_Stre[post_j, pre_i]
-            new_stre = stre+delta_stre*np.sign(stre)
+            if delta_stre<1:
+                #increase of a percenatge
+                new_stre = stre+delta_stre*np.abs(stre)*np.sign(stre)
+            else:
+                #absolute increase
+                new_stre = stre+delta_stre*np.sign(stre)
+                
             Target_Stre[post_j, pre_i] = new_stre
 
             for i in range(ntrial):
@@ -173,7 +183,12 @@ def main(cond, delta_stre = 10, ntrial=10):
                 cc = np.corrcoef(Ctrl_frvector,Target_frvector)[0,1]
                 
                 CorrCoef[synap_idx, i] = cc
-                DiffPerChange[synap_idx, i] = (1-cc)/delta_stre
+                if delta_stre<1:
+                    #increase of a percenatge
+                    DiffPerChange[synap_idx, i] = (1-cc)/(delta_stre*np.abs(stre))
+                else:
+                    #absolute increase
+                    DiffPerChange[synap_idx, i] = (1-cc)/delta_stre
             
             synap_idx += 1
             
@@ -182,7 +197,12 @@ def main(cond, delta_stre = 10, ntrial=10):
 if __name__=='__main__':
     cond = 'Spont.'
     #cond = 'Evoked'
-    CorrCoef, DiffPerChange, SynapName = main(cond, delta_stre = 5, ntrial= 5) #number of trials
+    
+    #absolute increase
+    #CorrCoef, DiffPerChange, SynapName = main(cond, delta_stre = 5, ntrial= 5) #number of trials
+    
+    #increase a percetage
+    CorrCoef, DiffPerChange, SynapName = main(cond, delta_stre = 0.1, ntrial= 5) #number of trials
     
     #%% 16 synapse ranking plot
     synaptic_ranking_plot(DiffPerChange, SynapName, cond)

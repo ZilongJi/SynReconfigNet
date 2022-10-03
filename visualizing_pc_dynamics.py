@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Jul  9 14:29:04 2022
+Created on Wed Sep 28 16:27:33 2022
 
-@author: Zilong
-
-A rate-based two compartment micro-circuit model of PCs, PVs, SSTs and VIPs.
+@author: zji
 
 Modeling for Li Yao's work on:
 Temporal Reconfiguration ofCortical Microcircuits for Neural Activity by 
@@ -148,81 +146,41 @@ def build_model(noise_strength, state='control', cond='Spont.'):
     
     return micro_net, pcs, pvs, ssts, vips
 
-def run_trials(n_trials, noise_strength, state, cond):
-    PC_Sam = []; PV_Sam = []; SST_Sam=[]; VIP_Sam=[]
-    for i in range(n_trials):
-        bp.base.clear_name_cache()
-        print('simulating trail {:.0f}'.format(i)) 
-        micro_net, pcs, pvs, ssts, vips = build_model(noise_strength, state, cond)
-
-        #reset the firing rates of different cell types
-        pcs.r_pc[:] = 0.; pvs.r_pv[:] = 0.; ssts.r_sst[:] = 0.; vips.r_vip[:] = 0.  
-
-        runner = bp.dyn.DSRunner(micro_net,
-                                 monitors=['PC.r_pc', 'PC.I_0',
-                                           'PV.r_pv', 'SST.r_sst',
-                                           'VIP.r_vip'],
-                                 dt=0.1,
-                                 numpy_mon_after_run=False,
-                                 progress_bar=True)
-        
-        runner.run(duration=1000)
-        
-        #for each trial, random sampling 5 neurons
-        n_cells = 3
-        idx = np.random.choice(int(pcs.size/4), n_cells, replace=False)
-        pc_samples = runner.mon['PC.r_pc'][-1,idx]; PC_Sam.append(pc_samples)
-        
-        idx = np.random.choice(int(pvs.size/4), n_cells, replace=False)
-        pv_samples = runner.mon['PV.r_pv'][-1,idx]; PV_Sam.append(pv_samples)
-
-        idx = np.random.choice(int(ssts.size/4), n_cells, replace=False)
-        sst_samples = runner.mon['SST.r_sst'][-1,idx]; SST_Sam.append(sst_samples)
-
-        idx = np.random.choice(int(vips.size/4), n_cells, replace=False)
-        vip_samples = runner.mon['VIP.r_vip'][-1,idx]; VIP_Sam.append(vip_samples)
-
-    PC_Samples = np.concatenate(PC_Sam); PV_Samples = np.concatenate(PV_Sam)
-    SST_Samples= np.concatenate(SST_Sam); VIP_Samples = np.concatenate(VIP_Sam)
-    return PC_Samples, PV_Samples, SST_Samples, VIP_Samples
-
 #%% do statistics
-def do_stats(cond):
+def visualize_dynamics(cond):
+    state='control'
+    noise_strength = 0.5
+    bp.base.clear_name_cache()
     
-    if cond == 'Spont.':
-        n_trials = 10; noise_strength = 0.5 #noise level
-        #n_trials = 1; noise_strength = 0.0 #noise level
-        print('Modeling Spontaneous...') 
-    elif cond == 'Evoked':
-        #n_trials = 10; noise_strength = 10. #noise level
-        n_trials = 10; noise_strength = 0.6 #noise level
-        print('Modeling Evoked...') 
-    else:
-        raise ValueError("Wrong Condition Name, Check It.")
+    micro_net, pcs, pvs, ssts, vips = build_model(noise_strength, state, cond)
 
-    PC_Samples_ctrl1, PV_Samples_ctrl1, SST_Samples_ctrl1, VIP_Samples_ctrl1 = run_trials(n_trials, noise_strength,state='control', cond=cond)
+    #reset the firing rates of different cell types
+    pcs.r_pc[:] = 0.; pvs.r_pv[:] = 0.; ssts.r_sst[:] = 0.; vips.r_vip[:] = 0.  
 
-    PC_Samples_md1, PV_Samples_md1, SST_Samples_md1, VIP_Samples_md1 = run_trials(n_trials, noise_strength,state='md1', cond=cond)
-
-    PC_Samples_ctrl2, PV_Samples_ctrl2, SST_Samples_ctrl2, VIP_Samples_ctrl2  = run_trials(n_trials, noise_strength,state='control', cond=cond)
-
-    PC_Samples_md4, PV_Samples_md4, SST_Samples_md4, VIP_Samples_md4 = run_trials(n_trials, noise_strength,state='md4', cond=cond)
-
-
-    # ttest on PCs ctrl vs. md1 & ctrl vs. md4
-    violoin_plot(PC_Samples_ctrl1, PC_Samples_md1, PC_Samples_ctrl2, 
-               PC_Samples_md4, cond, celltype='PC')
+    runner = bp.dyn.DSRunner(micro_net,
+                             monitors=['PC.r_pc', 'PC.I_0',
+                                       'PV.r_pv', 'SST.r_sst',
+                                       'VIP.r_vip'],
+                             dt=0.1,
+                             numpy_mon_after_run=False,
+                             progress_bar=True)
     
-    violoin_plot(PV_Samples_ctrl1, PV_Samples_md1, PV_Samples_ctrl2, 
-               PV_Samples_md4, cond, celltype='PV')
+    runner.run(duration=1000)
     
-    violoin_plot(SST_Samples_ctrl1, SST_Samples_md1, SST_Samples_ctrl2, 
-               SST_Samples_md4, cond, celltype='SST')
+    #for each trial, random sampling 5 neurons
+    pcs = runner.mon['PC.r_pc']
     
-    violoin_plot(VIP_Samples_ctrl1, VIP_Samples_md1, VIP_Samples_ctrl2, 
-               VIP_Samples_md4, cond, celltype='VIP')
+    trial_plot_pc(state, pcs, numsamples=20)  
+    '''
+    idx = np.random.choice(int(pvs.size/4), n_cells, replace=False)
+    pv_samples = runner.mon['PV.r_pv'][-1,idx]
 
+    idx = np.random.choice(int(ssts.size/4), n_cells, replace=False)
+    sst_samples = runner.mon['SST.r_sst'][-1,idx]
+
+    idx = np.random.choice(int(vips.size/4), n_cells, replace=False)
+    vip_samples = runner.mon['VIP.r_vip'][-1,idx]
+    '''
 
 if __name__=='__main__':
-    do_stats(cond = 'Spont.')
-    #do_stats(cond = 'Evoked')
+    visualize_dynamics(cond = 'Spont.')

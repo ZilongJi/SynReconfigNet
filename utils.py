@@ -17,6 +17,7 @@ import pandas as pd
 import seaborn as sns
 from scipy import stats
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
 """
 def SetConnectivity(Con_Prob, Con_Stre, NC):
     '''
@@ -234,15 +235,16 @@ def trial_plot_pc(name, pcs, numsamples=20):
     #PC
     for k in range(numsamples):
         idx = np.random.choice(700, 1)[0]
-        axs[0].plot(pcs.mon.r_pc[:,idx], alpha=0.1, color='k')  
+        axs[0].plot(pcs[:,idx], alpha=0.05, color='b')  
     axs[0].set_xlabel('Simulation time (ms)');
     axs[0].set_ylabel('Firing rate')
-    axs[0].plot(np.mean(pcs.mon.r_pc[:,:], axis=1), color='r') 
+    axs[0].plot(np.mean(pcs[:,:], axis=1), color='b', linewidth=2) 
     
-    axs[1].hist(pcs.mon.r_pc[-1,:], bins=20, facecolor='k', alpha=0.5, density=True)
+    axs[1].hist(pcs[-1,:], bins=20, facecolor='w',edgecolor='b', alpha=0.5, density=False)
+    axs[1].axvline(x=np.mean(pcs[-1,:]), color='r')
     axs[1].set_xlabel('Final firing rate')
-    axs[1].set_ylabel('frequency distribution')
-    axs[1].set_title('mean firing rate {:.2f}'.format(np.mean(pcs.mon.r_pc[-1,:])))
+    axs[1].set_ylabel('Frequency')
+    axs[1].set_title('<r>={:.2f} Hz'.format(np.mean(pcs[-1,:])))
     
     plt.tight_layout()
     plt.savefig('./figures/'+name+'_pc.png')
@@ -289,8 +291,9 @@ def violoin_plot(ctrl1, md1, ctrl2, md4, cond, celltype):
     _, P_ctrl_md4 = stats.ttest_ind(ctrl2, md4)
     
     
-    plt.title('P value of Ctrl vs. MD1 {:.3f}, Ctrl vs. MD4 {:.3f}'\
-              .format(P_ctrl_md1, P_ctrl_md4), fontname="Arial", size=20)    
+    #barplot_annotate_brackets(num1, num2, data, center, height, yerr=None, dh=.05, barh=.05, fs=None, maxasterix=None
+    
+    plt.title('P value of Ctrl vs. MD1 {:.3f}, Ctrl vs. MD4 {:.3f}'.format(P_ctrl_md1, P_ctrl_md4), fontname="Arial", size=20)    
     
     plt.tight_layout()
     
@@ -384,6 +387,66 @@ def box_plot(ctrl1, md1, ctrl2, md4, cond, celltype):
     
     plt.savefig('./figures/'+name+'.png')
     plt.savefig('./figures/EPS/'+name+'.eps')
+
+def barplot_annotate_brackets(num1, num2, data, center, height, yerr=None, dh=.05, barh=.05, fs=None, maxasterix=None):
+    """ 
+    Annotate barplot with p-values.
+    Params:
+        num1: number of left bar to put bracket over
+        num2: number of right bar to put bracket over
+        data: string to write or number for generating asterixes
+        center: centers of all bars (like plt.bar() input)
+        height: heights of all bars (like plt.bar() input)
+        yerr: yerrs of all bars (like plt.bar() input)
+        dh: height offset over bar / bar + yerr in axes coordinates (0 to 1)
+        barh: bar height in axes coordinates (0 to 1)
+        fs: font size
+        maxasterix: maximum number of asterixes to write (for very small p-values)
+    """
+    if type(data) is str:
+        text = data
+    else:
+        # * is p < 0.05
+        # ** is p < 0.005
+        # *** is p < 0.0005
+        # etc.
+        text = ''
+        p = .05
+    
+        while data < p:
+            text += '*'
+            p /= 10.
+    
+            if maxasterix and len(text) == maxasterix:
+                break
+    
+        if len(text) == 0:
+            text = 'n. s.'
+
+    lx, ly = center[num1], height[num1]
+    rx, ry = center[num2], height[num2]
+
+    if yerr:
+        ly += yerr[num1]
+        ry += yerr[num2]
+
+    ax_y0, ax_y1 = plt.gca().get_ylim()
+    dh *= (ax_y1 - ax_y0)
+    barh *= (ax_y1 - ax_y0)
+
+    y = max(ly, ry) + dh
+
+    barx = [lx, lx, rx, rx]
+    bary = [y, y+barh, y+barh, y]
+    mid = ((lx+rx)/2, y+barh)
+
+    plt.plot(barx, bary, c='black')
+
+    kwargs = dict(ha='center', va='bottom')
+    if fs is not None:
+        kwargs['fontsize'] = fs
+
+    plt.text(*mid, text, **kwargs)            
 
 def slopewithshadow_plot(Results, Syn_Strength, syn_name, ntrial):
     """
@@ -956,41 +1019,82 @@ def plot_activity_reproduce_index(name, rp_index, status):
     Num = len(name)
     
     fig, ax = plt.subplots(figsize=(20,10), dpi=100)
-    ax.set_xticks(np.arange(0,4,1))
-    ax.set_xticklabels(['PC', 'PV', 'SST', 'VIP'], fontsize=20)
-    ax.set_yticks(np.arange(0,Num,1))
-    ax.set_yticklabels(name, fontsize=20)     
-    plt.hlines(y=np.arange(0, Num)+0.5, xmin=np.full(Num, 0)-0.5, xmax=np.full(Num, 4)-0.5, color="white")
-    plt.vlines(x=np.arange(0, 4)+0.5, ymin=np.full(4, 0)-0.5, ymax=np.full(4, Num)-0.5, color="white")    
-
-    plt.imshow(rp_index, cmap='RdBu', aspect=0.3, vmin=np.min(rp_index), vmax=-np.min(rp_index))
-    plt.colorbar(location='right', shrink=0.5)    
+    ax.set_yticks(np.arange(0,4,1))
+    ax.set_yticklabels(['PC', 'PV', 'SST', 'VIP'], fontsize=20)
+    ax.set_xticks(np.arange(0,Num,1))
+    ax.set_xticklabels(name, fontsize=25)     
+    plt.vlines(x=np.arange(0, Num)+0.5, ymin=np.full(Num, 0)-0.5, ymax=np.full(Num, 4)-0.5, color="white")
+    plt.hlines(y=np.arange(0, 4)+0.5, xmin=np.full(4, 0)-0.5, xmax=np.full(4, Num)-0.5, color="white")    
+    
+    
+    camp_reverse = plt.cm.get_cmap('RdBu_r')
+    if status=='MD1':
+        plt.imshow(rp_index.T, cmap=camp_reverse, aspect=0.6, vmin=-0.46, vmax=0.46)
+    else:
+        plt.imshow(rp_index.T, cmap=camp_reverse, aspect=0.6, vmin=np.min(rp_index), vmax=-np.min(rp_index))
+    '''
+    ax_divider = make_axes_locatable(ax)
+    cax = ax_divider.append_axes("top", size="2%")
+    cb = plt.colorbar(im, cax=cax, orientation="horizontal")
+    '''
+    cb = plt.colorbar(orientation='horizontal', shrink=0.5)    
+    cb.ax.xaxis.set_ticks_position("top")
+    cb.ax.tick_params(labelsize=20)
+    plt.tight_layout()
     
     plt.savefig('./figures/reproduce_index_'+status+'.png')
-    plt.savefig('./figures/EPS/reproduce_index_'+status+'.eps')     
+    plt.savefig('./figures/EPS/reproduce_index_'+status+'.eps')  
+    
+    #correlation plot
+    if status=='MD1':
+        fig, ax = plt.subplots(figsize=(20,12), dpi=100)
+    else:
+        fig, ax = plt.subplots(figsize=(20,6), dpi=100)
+    ax.set_xticks(np.arange(0,Num,1)+0.5)
+    ax.set_xticklabels(name, fontsize=25)     
+    
+    Corr = []
+    for i in range(Num):
+        corrvalue = np.corrcoef(rp_index[i,:], rp_index[-1,:])[0,1]
+        Corr.append(corrvalue)
+        
+    plt.plot(np.arange(Num)+0.5, Corr, 'o-', linewidth=5, markersize=20)
+    plt.ylabel('Correlation coefficient', fontsize=25)
+    plt.xlim([0,Num])
+    
+    plt.tight_layout()
+    
+    '''
+    ax_divider = make_axes_locatable(ax)
+    cax = ax_divider.append_axes("top", size="2%")
+    cb = plt.colorbar(im, cax=cax, orientation="horizontal")
+    '''
+    
+    plt.savefig('./figures/reproduce_index_correlation_'+status+'.png')
+    plt.savefig('./figures/EPS/reproduce_index_correlation_'+status+'.eps')      
     
 def synaptic_ranking_plot(DiffPerChange, SynapName, cond):
     """
-    synaptic ranking of 16 synapses
+    synaptic ranking of 13 synapses
     """
-    fig, ax = plt.subplots(figsize=(20,10), dpi=100)
+    fig, ax = plt.subplots(figsize=(10,13), dpi=100)
     
     column_mean = np.mean(DiffPerChange, axis=1)
     column_std = np.std(DiffPerChange, axis=1)
     
-    temp_mean = -column_mean
-    index = temp_mean.argsort()
+    index = column_mean.argsort()
     column_mean = column_mean[index]
     column_std = column_std[index]
     SynapName = [SynapName[i] for i in index]
     
     
     X = np.arange(1,len(SynapName)+1,1)
-    ax.bar(X, column_mean.T, yerr=column_std.T, align='center', alpha=0.5, ecolor='black', capsize=10)
-    ax.set_xticks(X)
-    ax.set_xticklabels(SynapName, rotation=45, ha='right', fontsize=20)
-    ax.set_ylabel('Synaptic contribution', fontsize=20)
-    plt.ticklabel_format(axis="y", style="sci", scilimits=(0,0))
+    ax.barh(X, column_mean.T, yerr=column_std.T, align='center', alpha=0.5, ecolor='black', capsize=10)
+    ax.set_yticks(X)
+    ax.set_yticklabels(SynapName, rotation=0, ha='right', fontsize=40)
+    ax.set_xlabel('Synaptic contribution', fontsize=40)
+    plt.xticks(fontsize=20)
+    plt.ticklabel_format(axis="x", style="sci", scilimits=(0,0))
     
     plt.tight_layout()
     plt.savefig('./figures/SynapticRanking_'+cond+'.png')
