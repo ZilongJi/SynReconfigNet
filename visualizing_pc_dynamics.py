@@ -170,7 +170,7 @@ def visualize_dynamics(cond):
     #for each trial, random sampling 5 neurons
     pcs = runner.mon['PC.r_pc']
     
-    trial_plot_pc(state, pcs, numsamples=20)  
+    trial_plot_pc(state, pcs, numsamples=5)  
     '''
     idx = np.random.choice(int(pvs.size/4), n_cells, replace=False)
     pv_samples = runner.mon['PV.r_pv'][-1,idx]
