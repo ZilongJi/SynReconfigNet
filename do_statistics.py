@@ -19,6 +19,7 @@ from NeuronZoo import PCNeuron, PVNeuron, SSTNeuron, VIPNeuron
 from utils import SetConnectivity, violoin_plot
 
 bp.math.set_platform('cpu')
+
 seed=1234
 np.random.seed(seed)
 
@@ -118,7 +119,7 @@ def build_model(x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='contr
     vips.PC = pcs; vips.PV = pvs; vips.SST = ssts
     
     #build the network
-    micro_net = bp.dyn.Network(pcs, pvs, ssts, vips)
+    micro_net = bp.Network(pcs, pvs, ssts, vips)
     
     return micro_net, pcs, pvs, ssts, vips
 
@@ -133,11 +134,11 @@ def run_trials(n_trials, x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, sta
                                                       cond)  
         #reset the firing rates of different cell types
         pcs.r_pc[:] = 0.; pvs.r_pv[:] = 0.; ssts.r_sst[:] = 0.; vips.r_vip[:] = 0.  
-        runner = bp.dyn.DSRunner(micro_net, 
-                                 monitors=['PC.r_pc', 'PC.I_0',
-                                           'PV.r_pv', 'SST.r_sst',
-                                           'VIP.r_vip'],
-                                 dt=0.1)
+        runner = bp.DSRunner(micro_net, 
+                             monitors=['PC.r_pc', 'PC.I_0',
+                                        'PV.r_pv', 'SST.r_sst',
+                                        'VIP.r_vip'],
+                             dt=0.1)
         runner.run(duration=1000)
         
         #for each trial, random sampling 5 neurons
@@ -147,15 +148,12 @@ def run_trials(n_trials, x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, sta
         
         idx = np.random.choice(100, n_cells, replace=False)
         pv_samples = runner.mon['PV.r_pv'][-1,idx]; PV_Sam.append(pv_samples)
-        # pv_samples = pvs.mon.r_pv[-1,idx]; PV_Sam.append(pv_samples)
 
         idx = np.random.choice(100, n_cells, replace=False)
         sst_samples = runner.mon['SST.r_sst'][-1,idx]; SST_Sam.append(sst_samples)
-        # sst_samples = ssts.mon.r_sst[-1,idx]; SST_Sam.append(sst_samples)
 
         idx = np.random.choice(100, n_cells, replace=False)
         vip_samples = runner.mon['VIP.r_vip'][-1,idx]; VIP_Sam.append(vip_samples)
-        # vip_samples = vips.mon.r_vip[-1,idx]; VIP_Sam.append(vip_samples)
 
     PC_Samples = np.concatenate(PC_Sam); PV_Samples = np.concatenate(PV_Sam)
     SST_Samples= np.concatenate(SST_Sam); VIP_Samples = np.concatenate(VIP_Sam)
@@ -166,7 +164,6 @@ def do_stats(cond):
     
     if cond == 'Spont.':
         n_trials = 10; noise_strength = 3.  #noise level
-        #n_trials = 1; noise_strength = 0.0 #noise level
         x_s = 18.8; x_d = 10
         x_i_pv = 3.1; x_i_sst=1.9; x_i_vip=1.4
         print('Modeling Spontaneous...') 
@@ -202,5 +199,5 @@ def do_stats(cond):
                VIP_Samples_md4, cond, celltype='VIP')
 
 if __name__=='__main__':
-    #do_stats(cond = 'Spont.')
-    do_stats(cond = 'Evoked')
+    do_stats(cond = 'Spont.')
+    # do_stats(cond = 'Evoked')

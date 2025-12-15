@@ -44,17 +44,23 @@ class PCNeuron(bp.dyn.NeuGroup):
         self.PV     =   None
         self.SST    =   None
         
-        self.integral = bp.odeint(self.derivative, method='exp_auto')
+        self.integral = bp.odeint(method='exp_auto', f=self.derivative)
         
-        
-    def derivative(self, r_pc, t, I_total):    
-        I_total_thres = I_total - self.theta_s
-        I_total_thres = bm.where(I_total_thres < 0, 0, I_total_thres)
-        # I_total_thres[I_total_thres < 0] = 0
-        dr_pc = 1. / self.tau * (-r_pc + I_total_thres)
-        return dr_pc
+    @property    
+    def derivative(self):
+        dr_pc = lambda r_pc, t, I_total: (
+            -r_pc
+            + bm.where(I_total - self.theta_s < 0, 0, I_total - self.theta_s)
+        ) / self.tau
+        return bp.JointEq([dr_pc])
     
-    def update(self, _t, _dt):
+    # def derivative(self, r_pc, t, I_total):    
+    #     I_total_thres = I_total - self.theta_s
+    #     I_total_thres = bm.where(I_total_thres < 0, 0, I_total_thres)
+    #     dr_pc = 1. / self.tau * (-r_pc + I_total_thres)
+    #     return dr_pc
+    
+    def update(self):
         #1, calculate the somatic inputs:
         I_S     =   self.x_s + bm.dot(self.W_pc_pv,self.PV.r_pv)
         
@@ -89,7 +95,7 @@ class PCNeuron(bp.dyn.NeuGroup):
         self.I_D0[:] = I_D0
         self.I_0.value  = I_0
         
-        self.r_pc.value = self.integral(self.r_pc, _t, I_total, _dt)
+        self.r_pc.value = self.integral(self.r_pc, bp.share.load("t"), I_total)
         
 class PVNeuron(bp.dyn.NeuGroup):
     
@@ -124,8 +130,7 @@ class PVNeuron(bp.dyn.NeuGroup):
         return dr_pv
     '''
 
-    
-    def update(self, _t, _dt):
+    def update(self):
         
         #calculate input from different cell type
         pc_input    =   bm.dot(self.W_pv_pc, self.PC.r_pc)
@@ -136,10 +141,9 @@ class PVNeuron(bp.dyn.NeuGroup):
         I_total     =   self.x_i + pc_input + pv_input + sst_input + vip_input \
                         + self.noise_strength*self.rng.randn(self.num)
         
-        r_pv        =   self.integral(self.r_pv, _t, I_total, _dt)
+        r_pv        =   self.integral(self.r_pv, bp.share.load("t"), I_total)
         
         r_pv = bm.where(r_pv < 0, 0, r_pv)
-        # r_pv[r_pv<0] = 0
 
         self.r_pv.value = r_pv
         
@@ -177,7 +181,7 @@ class SSTNeuron(bp.dyn.NeuGroup):
         return dr_sst
     '''
     
-    def update(self, _t, _dt):
+    def update(self):
         
         #calculate input from different cell type
         pc_input    =   bm.dot(self.W_sst_pc, self.PC.r_pc)
@@ -188,7 +192,7 @@ class SSTNeuron(bp.dyn.NeuGroup):
         I_total     =   self.x_i + pc_input + pv_input + sst_input + vip_input \
                         + self.noise_strength*self.rng.randn(self.num)
         
-        r_sst       =   self.integral(self.r_sst, _t, I_total, _dt)
+        r_sst       =   self.integral(self.r_sst, bp.share.load("t"), I_total)
         
         r_sst = bm.where(r_sst < 0, 0, r_sst)
 
@@ -228,7 +232,7 @@ class VIPNeuron(bp.dyn.NeuGroup):
             return dr_vip
         '''
     
-    def update(self, _t, _dt):
+    def update(self):
         
         #calculate input from different cell type
         pc_input    =   bm.dot(self.W_vip_pc, self.PC.r_pc)
@@ -239,7 +243,7 @@ class VIPNeuron(bp.dyn.NeuGroup):
         I_total     =    self.x_i + pc_input + pv_input + sst_input + vip_input \
                         + self.noise_strength*self.rng.randn(self.num)
         
-        r_vip = self.integral(self.r_vip, _t, I_total, _dt)
+        r_vip = self.integral(self.r_vip, bp.share.load("t"), I_total)
         
         r_vip = bm.where(r_vip<0, 0, r_vip)
 

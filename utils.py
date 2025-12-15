@@ -241,7 +241,7 @@ def violoin_plot(ctrl1, md1, ctrl2, md4, cond, celltype):
     plt.tight_layout()
     
     plt.savefig('./figures/'+name+'_violin.png')
-    plt.savefig('./figures/EPS/'+name+'_violin.eps')       
+    # plt.savefig('./figures/EPS/'+name+'_violin.eps')       
 
 
 def bar_plot(ctrl1, md1, ctrl2, md4, cond, celltype):
@@ -284,7 +284,7 @@ def bar_plot(ctrl1, md1, ctrl2, md4, cond, celltype):
     plt.tight_layout()
     
     plt.savefig('./figures/'+name+'.png')
-    plt.savefig('./figures/EPS/'+name+'.eps')        
+    # plt.savefig('./figures/EPS/'+name+'.eps')        
 
 def box_plot(ctrl1, md1, ctrl2, md4, cond, celltype):
     """
@@ -329,7 +329,7 @@ def box_plot(ctrl1, md1, ctrl2, md4, cond, celltype):
     plt.tight_layout()
     
     plt.savefig('./figures/'+name+'.png')
-    plt.savefig('./figures/EPS/'+name+'.eps')
+    # plt.savefig('./figures/EPS/'+name+'.eps')
 
 def slopewithshadow_plot(Results, Syn_Strength, syn_name, ntrial):
     """
@@ -376,7 +376,7 @@ def slopewithshadow_plot(Results, Syn_Strength, syn_name, ntrial):
     plt.ylabel('Evoked activity (Hz)', fontname="Arial", size=20)    
     plt.tight_layout()
     plt.savefig('./figures20/varying_'+ syn_name +'.png')
-    plt.savefig('./figures20/EPS/varying_'+ syn_name +'.eps')                          
+    # plt.savefig('./figures20/EPS/varying_'+ syn_name +'.eps')                          
 
 def slope_rank_plot(Results, Con_Stre, lowerbound, upperbound, cond, interval):
     """
@@ -437,7 +437,7 @@ def slope_rank_plot(Results, Con_Stre, lowerbound, upperbound, cond, interval):
     
     plt.tight_layout()
     plt.savefig('./figures/sloperank.png')
-    plt.savefig('./figures/EPS/sloperank.eps')        
+    # plt.savefig('./figures/EPS/sloperank.eps')        
 
 def slope_plot(Results, Con_Stre, lowerbound, upperbound, cond, celltype):
     """
@@ -530,7 +530,7 @@ def slope_plot(Results, Con_Stre, lowerbound, upperbound, cond, celltype):
                     
     plt.tight_layout()
     plt.savefig('./figures/varying_synpase_'+cond+'_'+celltype+'.png')
-    plt.savefig('./figures/EPS/varying_synpase_'+cond+'_'+celltype+'.eps')
+    # plt.savefig('./figures/EPS/varying_synpase_'+cond+'_'+celltype+'.eps')
 
     #%% rank slope
     name = sorted(Slope, key=Slope.get, reverse=True)
@@ -543,7 +543,7 @@ def slope_plot(Results, Con_Stre, lowerbound, upperbound, cond, celltype):
     plt.ylabel('slope')
     plt.xticks(rotation=45)
     plt.savefig('./figures/slope_'+cond+'_'+celltype+'.png')
-    plt.savefig('./figures/EPS/slope_'+cond+'_'+celltype+'.eps')
+    # plt.savefig('./figures/EPS/slope_'+cond+'_'+celltype+'.eps')
     
     abs_Slope = {}
     for n in name:
@@ -558,7 +558,7 @@ def slope_plot(Results, Con_Stre, lowerbound, upperbound, cond, celltype):
     plt.ylabel('absolute slope')
     plt.xticks(rotation=45)
     plt.savefig('./figures/abs_slope_'+cond+'_'+celltype+'.png')
-    plt.savefig('./figures/EPS/abs_slope_'+cond+'_'+celltype+'.eps')
+    # plt.savefig('./figures/EPS/abs_slope_'+cond+'_'+celltype+'.eps')
 
 
 def percentage_plot(Results, cond, celltype):
@@ -635,7 +635,7 @@ def percentage_plot(Results, cond, celltype):
         plt.xticks(rotation=45)
         plt.tight_layout()
         plt.savefig('./figures/percentage_'+cond+'_'+celltype+'.png')
-        plt.savefig('./figures/EPS/percentage_'+cond+'_'+celltype+'.eps')
+        # plt.savefig('./figures/EPS/percentage_'+cond+'_'+celltype+'.eps')
     else:
         fig, axs = plt.subplots(2, 1, figsize=(5,10), dpi=100)
         
@@ -661,7 +661,7 @@ def percentage_plot(Results, cond, celltype):
         plt.xticks(rotation=45)
         plt.tight_layout()
         plt.savefig('./figures/percentage_'+cond+'_'+celltype+'.png')
-        plt.savefig('./figures/EPS/percentage_'+cond+'_'+celltype+'.eps')   
+        # plt.savefig('./figures/EPS/percentage_'+cond+'_'+celltype+'.eps')   
 
 def synaptic_contribution_plot(Results, celltype):
     """
@@ -735,7 +735,7 @@ def synaptic_contribution_plot(Results, celltype):
     
     plt.tight_layout()
     plt.savefig('./figures/percentage_'+celltype+'.png')
-    plt.savefig('./figures/EPS/percentage_'+celltype+'.eps')        
+    # plt.savefig('./figures/EPS/percentage_'+celltype+'.eps')        
         
 def joint_varying(X, Y, Results_PC, Results_PV, Results_SST, Results_VIP, cond):
     """
@@ -778,7 +778,7 @@ def joint_varying(X, Y, Results_PC, Results_PV, Results_SST, Results_VIP, cond):
     plt.tight_layout()
     
     plt.savefig('./figures/joint_varying_synapses_'+cond+'.png')
-    plt.savefig('./figures/EPS/joint_varying_synapses_'+cond+'.eps')
+    # plt.savefig('./figures/EPS/joint_varying_synapses_'+cond+'.eps')
     
         
         
