@@ -16,7 +16,7 @@ Acknowledgement: Brainpy developer: Chaoming Wang
 import brainpy as bp
 import numpy as np
 from NeuronZoo import PCNeuron, PVNeuron, SSTNeuron, VIPNeuron
-from utils import SetConnectivity, violoin_plot
+from utils import SetConnectivity, bar_plot
 
 bp.math.set_platform('cpu')
 
@@ -63,10 +63,8 @@ def build_model(x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='contr
         Con_Stre = Con_Stre/79.0
     elif state == 'md4':
         if cond=='Spont.':
-            #x_s = 18.8
             x_s = 17.4 # spontaneous: bottom up input decreased with MD 4 days 
         elif cond=='Evoked':
-            #x_s = 22.8
             x_s = 20.7 # evoked: bottom up input decreased with MD 4 days 
         else:
             raise ValueError('Choose correct condition!')
@@ -186,18 +184,19 @@ def do_stats(cond):
         = run_trials(n_trials, x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='md4', cond=cond)
     
     # ttest on PCs ctrl vs. md1 & ctrl vs. md4
-    violoin_plot(PC_Samples_ctrl1, PC_Samples_md1, PC_Samples_ctrl2, 
+    bar_plot(PC_Samples_ctrl1, PC_Samples_md1, PC_Samples_ctrl2, 
                PC_Samples_md4, cond, celltype='PC')
     
-    violoin_plot(PV_Samples_ctrl1, PV_Samples_md1, PV_Samples_ctrl2, 
+    bar_plot(PV_Samples_ctrl1, PV_Samples_md1, PV_Samples_ctrl2, 
                PV_Samples_md4, cond, celltype='PV')
     
-    violoin_plot(SST_Samples_ctrl1, SST_Samples_md1, SST_Samples_ctrl2, 
+    bar_plot(SST_Samples_ctrl1, SST_Samples_md1, SST_Samples_ctrl2, 
                SST_Samples_md4, cond, celltype='SST')
     
-    violoin_plot(VIP_Samples_ctrl1, VIP_Samples_md1, VIP_Samples_ctrl2, 
+    bar_plot(VIP_Samples_ctrl1, VIP_Samples_md1, VIP_Samples_ctrl2, 
                VIP_Samples_md4, cond, celltype='VIP')
 
 if __name__=='__main__':
-    do_stats(cond = 'Spont.')
-    # do_stats(cond = 'Evoked')
+    # do_stats(cond = 'Spont.')
+    do_stats(cond = 'Evoked')
+# %%

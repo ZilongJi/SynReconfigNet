@@ -202,89 +202,265 @@ def trial_plot_pc(name, pcs, numsamples=20):
     plt.savefig('./figures/'+name+'_pc.png')
     plt.savefig('./figures/EPS/'+name+'_pc.eps')
 
-def violoin_plot(ctrl1, md1, ctrl2, md4, cond, celltype):
-    """
-    violinplot with seaborn
-    """
-    #regroup the data into dataframe
-    data = np.concatenate(
-        [[ctrl1, len(ctrl1)*['control vs. md1'], len(ctrl1)*['control']],
-         [md1, len(md1)*['control vs. md1'], len(md1)*['md']],
-         [ctrl2, len(ctrl2)*['control vs. md4'], len(ctrl2)*['control']],
-         [md4, len(md4)*['control vs. md4'], len(md4)*['md']]],
-        axis=1)
-    
-    df = pd.DataFrame(columns=['value', 'comparison', 'state'], data=data.T)
-    df['value'] = df['value'].astype(float)
+# def violoin_plot(ctrl1, md1, ctrl2, md4, cond, celltype):
+#     """
+#     violinplot with seaborn
+#     """
 
-    plt.figure(figsize=(10,6))
-    custom_params = {"axes.spines.right": False, "axes.spines.top": False}
-    sns.set_theme(style="ticks", rc=custom_params)
-    sns.color_palette("flare", as_cmap=True)
-    bp = sns.violinplot(x="comparison", y="value", hue="state",
-                    data=df, split=True, inner='stick')
-    handles, labels = bp.get_legend_handles_labels()
-    plt.legend(handles[0:4], labels[0:4], bbox_to_anchor=(1.01, 0.7), loc='upper left', fontsize=20)
-    name = cond +' ('+ celltype+ ')'
-    plt.xlabel(name, fontname="Arial", size=20)
-    plt.ylabel('Firing rate of '+celltype + ' (Hz)', fontname="Arial", size=20)
-    plt.xticks(fontsize=20); plt.yticks(fontsize=20)        
+#     # regroup data into dataframe
+#     data = np.concatenate(
+#         [[ctrl1, len(ctrl1)*['NR 1d vs. MD 1d'], len(ctrl1)*['NR 1d']],
+#          [md1,   len(md1)*['NR 1d vs. MD 1d'], len(md1)*['MD 1d']],
+#          [ctrl2, len(ctrl2)*['NR 4d vs. MD 4d'], len(ctrl2)*['NR 4d']],
+#          [md4,   len(md4)*['NR 4d vs. MD 4d'], len(md4)*['MD 4d']]],
+#         axis=1
+#     )
+
+#     df = pd.DataFrame(columns=['value', 'comparison', 'state'], data=data.T)
+#     df['value'] = df['value'].astype(float)
+
+#     # ----- colour definition -----
+#     palette = {
+#         'control': '#80a8cc',
+#         'md': '#4c4c4c'
+#     }
+
+#     plt.figure(figsize=(3, 3), dpi=300)
+#     custom_params = {"axes.spines.right": False, "axes.spines.top": False}
+#     sns.set_theme(style="ticks", rc=custom_params)
+
+#     bp = sns.violinplot(
+#         x="comparison",
+#         y="value",
+#         hue="state",
+#         data=df,
+#         split=True,
+#         inner='stick',
+#         palette=palette,
+#         linewidth=1
+#     )
+#     name = cond +' ('+ celltype+ ')'
     
-    #Perform the Mann-Whitney U rank test on two independent samples.
-    _, P_ctrl_md1 = stats.mannwhitneyu(ctrl1, md1)
-    _, P_ctrl_md4 = stats.mannwhitneyu(ctrl2, md4)
-    
-    
-    plt.title('P value of Ctrl vs. MD1 {:.3f}, Ctrl vs. MD4 {:.3f}'\
-              .format(P_ctrl_md1, P_ctrl_md4), fontname="Arial", size=20)    
-    
-    plt.tight_layout()
-    
-    plt.savefig('./figures/'+name+'_violin.png')
-    # plt.savefig('./figures/EPS/'+name+'_violin.eps')       
+#     plt.ylabel(f"{cond} activity of {celltype} (Hz)", fontsize=10)
+#     plt.xticks(fontsize=8)
+#     plt.yticks(fontsize=8)
+
+#     # statistics
+#     _, P_ctrl_md1 = stats.mannwhitneyu(ctrl1, md1)
+#     _, P_ctrl_md4 = stats.mannwhitneyu(ctrl2, md4)
+#     #print stats
+#     print(f"{name} - P value of Ctrl vs. MD1: {P_ctrl_md1:.3f}, Ctrl vs. MD4: {P_ctrl_md4:.3f}")
+
+#     plt.tight_layout()
+#     plt.savefig(f'./figures/{name}_violin.pdf')
+
+
+
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from scipy import stats
+from matplotlib.ticker import MaxNLocator
+
+
+def _add_sig_bar(ax, x1, x2, y, h, text, fontsize=8, lw=1):
+    ax.plot([x1, x1, x2, x2], [y, y + h, y + h, y], linewidth=lw, color='k', clip_on=False)
+    ax.text((x1 + x2) / 2, y + h, text, ha='center', va='bottom', fontsize=fontsize)
 
 
 def bar_plot(ctrl1, md1, ctrl2, md4, cond, celltype):
     """
-    boxplot with standard error of the mean (SEM) 
-    """    
-     
-    #regroup the data into dataframe
-    data = np.concatenate(
-        [[ctrl1, len(ctrl1)*['control vs. md1'], len(ctrl1)*['control1']],
-         [md1, len(md1)*['control vs. md1'], len(md1)*['md1']],
-         [ctrl2, len(ctrl2)*['control vs. md4'], len(ctrl2)*['control4']],
-         [md4, len(md4)*['control vs. md4'], len(md4)*['md4']]],
-        axis=1)
-    
-    df = pd.DataFrame(columns=['value', 'comparison', 'state'], data=data.T)
-    df['value'] = df['value'].astype(float)
-    
-    plt.figure(figsize=(10,4))
-    sns.set_style('white')
-    bp = sns.barplot(x='comparison', y='value', hue='state', data=df, 
-                palette='colorblind', ci=68, capsize=.15, linewidth=3)   
-    bp = sns.stripplot(x='comparison', y='value', hue='state', data=df, jitter=0.25, 
-                 size=10, alpha=0.5, edgecolor=sns.color_palette("hls", 4), linewidth=1, dodge=True)
-    handles, labels = bp.get_legend_handles_labels()
-    plt.legend(handles[0:4], labels[0:4], bbox_to_anchor=(1.01, 0.7), loc='upper left', fontsize=20)    
-    name = cond +' ('+ celltype+ ')'
-    plt.xlabel(name, size=20)
-    plt.ylabel('Firing rate of '+celltype + ' (Hz)', size=20)
-    plt.xticks(fontsize=20); plt.yticks(fontsize=20)
-    
-    #Perform the Mann-Whitney U rank test on two independent samples.
-    _, P_ctrl_md1 = stats.mannwhitneyu(ctrl1, md1)
-    _, P_ctrl_md4 = stats.mannwhitneyu(ctrl2, md4)
-    
-    
-    plt.title('P value of Ctrl vs. MD1 {:.3f}, Ctrl vs. MD4 {:.3f}'\
-              .format(P_ctrl_md1, P_ctrl_md4), size=20)    
-    
+    Bar plot (mean ± SEM) + scatter, 4 colours, with:
+      - integer-only y ticks (sparse)
+      - custom x positions: bars 1–2 close, 3–4 close, larger gap between 2 and 3
+      - significance brackets above (NR vs MD within 1d and within 4d)
+    """
+
+    # -----------------------------
+    # Dataframe
+    # -----------------------------
+    groups = ['NR 1d', 'MD 1d', 'NR 4d', 'MD 4d']
+    values = np.concatenate([ctrl1, md1, ctrl2, md4]).astype(float)
+    group_labels = (len(ctrl1) * ['NR 1d'] +
+                    len(md1)   * ['MD 1d'] +
+                    len(ctrl2) * ['NR 4d'] +
+                    len(md4)   * ['MD 4d'])
+    df = pd.DataFrame({'value': values, 'group': group_labels})
+    df['group'] = pd.Categorical(df['group'], categories=groups, ordered=True)
+
+    # -----------------------------
+    # Colours
+    # -----------------------------
+    palette = {
+        'NR 1d': '#9899a0',
+        'MD 1d': '#80a8cc',
+        'NR 4d': '#4b4c4e',
+        'MD 4d': '#357788'
+    }
+
+    # -----------------------------
+    # Custom x positions (grouped spacing)
+    # -----------------------------
+    x_pos = {'NR 1d': 0.00, 'MD 1d': 0.60, 'NR 4d': 1.5, 'MD 4d': 2.10}
+
+    means = df.groupby('group', observed=True)['value'].mean().reindex(groups).values
+    sems  = df.groupby('group', observed=True)['value'].sem().reindex(groups).values
+
+    # -----------------------------
+    # Plot
+    # -----------------------------
+    plt.figure(figsize=(3, 3), dpi=300)
+    custom_params = {"axes.spines.right": False, "axes.spines.top": False}
+    sns.set_theme(style="ticks", rc=custom_params)
+    ax = plt.gca()
+
+    # Bars + SEM
+    bar_width = 0.50
+    xs = [x_pos[g] for g in groups]
+    ax.bar(
+        xs, means, yerr=sems,
+        width=bar_width,
+        capsize=3,
+        color=[palette[g] for g in groups],
+        edgecolor='none'
+    )
+
+    # Scatter with jitter (in x-units)
+    rng = np.random.default_rng(0)  # deterministic jitter
+    jitter = 0.10
+    for g in groups:
+        y = df.loc[df['group'] == g, 'value'].to_numpy(dtype=float)
+        x = x_pos[g] + rng.uniform(-jitter, jitter, size=y.size)
+        ax.scatter(x, y, s=20, c='k', alpha=0.2, linewidths=0)
+
+    name = f"{cond} ({celltype})"
+    ax.set_xlabel("")
+    ax.set_ylabel(f"{cond} activity of {celltype} (Hz)", fontsize=10)
+
+    # X ticks at custom positions
+    ax.set_xticks(xs)
+    ax.set_xticklabels(groups, fontsize=8, rotation=45)
+
+    # Integer-only, sparse y ticks
+    ax.yaxis.set_major_locator(MaxNLocator(nbins=4, integer=True))
+    ax.tick_params(axis='y', labelsize=8)
+
+    # -----------------------------
+    # Stats
+    # -----------------------------
+    _, P_ctrl_md1 = stats.mannwhitneyu(ctrl1, md1, alternative='two-sided')
+    _, P_ctrl_md4 = stats.mannwhitneyu(ctrl2, md4, alternative='two-sided')
+    print(f"{name} - P value of NR vs. MD (1d): {P_ctrl_md1:.3f}, NR vs. MD (4d): {P_ctrl_md4:.3f}")
+
+    # -----------------------------
+    # Significance brackets
+    # -----------------------------
+    y_min, y_max = ax.get_ylim()
+    y_range = (y_max - y_min) if (y_max - y_min) > 0 else 1.0
+    base_y = y_max + 0.05 * y_range
+    h = 0.03 * y_range
+    step = 0.10 * y_range
+
+    if P_ctrl_md1 < 0.05:
+        _add_sig_bar(ax, x_pos['NR 1d'], x_pos['MD 1d'], base_y, h, f"p={P_ctrl_md1:.2e}", fontsize=8, lw=1)
+        base_y += step
+
+    if P_ctrl_md4 < 0.05:
+        _add_sig_bar(ax, x_pos['NR 4d'], x_pos['MD 4d'], base_y, h, f"p={P_ctrl_md4:.2e}", fontsize=8, lw=1)
+        base_y += step
+
+    ax.set_ylim(y_min, base_y + h + 0.05 * y_range)
+
     plt.tight_layout()
+    plt.savefig(f'./figures/{name}_bar_scatter.pdf')
+    plt.close()
+
+
+
+# def violoin_plot(ctrl1, md1, ctrl2, md4, cond, celltype):
+#     """
+#     violinplot with seaborn
+#     """
+#     #regroup the data into dataframe
+#     data = np.concatenate(
+#         [[ctrl1, len(ctrl1)*['control vs. md1'], len(ctrl1)*['control']],
+#          [md1, len(md1)*['control vs. md1'], len(md1)*['md']],
+#          [ctrl2, len(ctrl2)*['control vs. md4'], len(ctrl2)*['control']],
+#          [md4, len(md4)*['control vs. md4'], len(md4)*['md']]],
+#         axis=1)
     
-    plt.savefig('./figures/'+name+'.png')
-    # plt.savefig('./figures/EPS/'+name+'.eps')        
+#     df = pd.DataFrame(columns=['value', 'comparison', 'state'], data=data.T)
+#     df['value'] = df['value'].astype(float)
+
+#     plt.figure(figsize=(10,6))
+#     custom_params = {"axes.spines.right": False, "axes.spines.top": False}
+#     sns.set_theme(style="ticks", rc=custom_params)
+#     sns.color_palette("flare", as_cmap=True)
+#     bp = sns.violinplot(x="comparison", y="value", hue="state",
+#                     data=df, split=True, inner='stick')
+#     handles, labels = bp.get_legend_handles_labels()
+#     plt.legend(handles[0:4], labels[0:4], bbox_to_anchor=(1.01, 0.7), loc='upper left', fontsize=20)
+#     name = cond +' ('+ celltype+ ')'
+#     plt.xlabel(name, fontname="Arial", size=20)
+#     plt.ylabel('Firing rate of '+celltype + ' (Hz)', fontname="Arial", size=20)
+#     plt.xticks(fontsize=20); plt.yticks(fontsize=20)        
+    
+#     #Perform the Mann-Whitney U rank test on two independent samples.
+#     _, P_ctrl_md1 = stats.mannwhitneyu(ctrl1, md1)
+#     _, P_ctrl_md4 = stats.mannwhitneyu(ctrl2, md4)
+    
+    
+#     plt.title('P value of Ctrl vs. MD1 {:.3f}, Ctrl vs. MD4 {:.3f}'\
+#               .format(P_ctrl_md1, P_ctrl_md4), fontname="Arial", size=20)    
+    
+#     plt.tight_layout()
+    
+#     plt.savefig('./figures/'+name+'_violin.png')
+#     # plt.savefig('./figures/EPS/'+name+'_violin.eps')       
+
+
+# def bar_plot(ctrl1, md1, ctrl2, md4, cond, celltype):
+#     """
+#     boxplot with standard error of the mean (SEM) 
+#     """    
+     
+#     #regroup the data into dataframe
+#     data = np.concatenate(
+#         [[ctrl1, len(ctrl1)*['control vs. md1'], len(ctrl1)*['control1']],
+#          [md1, len(md1)*['control vs. md1'], len(md1)*['md1']],
+#          [ctrl2, len(ctrl2)*['control vs. md4'], len(ctrl2)*['control4']],
+#          [md4, len(md4)*['control vs. md4'], len(md4)*['md4']]],
+#         axis=1)
+    
+#     df = pd.DataFrame(columns=['value', 'comparison', 'state'], data=data.T)
+#     df['value'] = df['value'].astype(float)
+    
+#     plt.figure(figsize=(10,4))
+#     sns.set_style('white')
+#     bp = sns.barplot(x='comparison', y='value', hue='state', data=df, 
+#                 palette='colorblind', ci=68, capsize=.15, linewidth=3)   
+#     bp = sns.stripplot(x='comparison', y='value', hue='state', data=df, jitter=0.25, 
+#                  size=10, alpha=0.5, edgecolor=sns.color_palette("hls", 4), linewidth=1, dodge=True)
+#     handles, labels = bp.get_legend_handles_labels()
+#     plt.legend(handles[0:4], labels[0:4], bbox_to_anchor=(1.01, 0.7), loc='upper left', fontsize=20)    
+#     name = cond +' ('+ celltype+ ')'
+#     plt.xlabel(name, size=20)
+#     plt.ylabel('Firing rate of '+celltype + ' (Hz)', size=20)
+#     plt.xticks(fontsize=20); plt.yticks(fontsize=20)
+    
+#     #Perform the Mann-Whitney U rank test on two independent samples.
+#     _, P_ctrl_md1 = stats.mannwhitneyu(ctrl1, md1)
+#     _, P_ctrl_md4 = stats.mannwhitneyu(ctrl2, md4)
+    
+    
+#     plt.title('P value of Ctrl vs. MD1 {:.3f}, Ctrl vs. MD4 {:.3f}'\
+#               .format(P_ctrl_md1, P_ctrl_md4), size=20)    
+    
+#     plt.tight_layout()
+    
+#     plt.savefig('./figures/'+name+'.png')
+#     # plt.savefig('./figures/EPS/'+name+'.eps')        
 
 def box_plot(ctrl1, md1, ctrl2, md4, cond, celltype):
     """

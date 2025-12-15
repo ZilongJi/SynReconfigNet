@@ -54,12 +54,6 @@ class PCNeuron(bp.dyn.NeuGroup):
         ) / self.tau
         return bp.JointEq([dr_pc])
     
-    # def derivative(self, r_pc, t, I_total):    
-    #     I_total_thres = I_total - self.theta_s
-    #     I_total_thres = bm.where(I_total_thres < 0, 0, I_total_thres)
-    #     dr_pc = 1. / self.tau * (-r_pc + I_total_thres)
-    #     return dr_pc
-    
     def update(self):
         #1, calculate the somatic inputs:
         I_S     =   self.x_s + bm.dot(self.W_pc_pv,self.PV.r_pv)
