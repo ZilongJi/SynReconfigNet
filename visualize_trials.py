@@ -14,7 +14,7 @@ Acknowledgement: Brainpy developer: Chaoming Wang
 """
 import brainpy as bp
 import numpy as np
-bp.backend.set('numba', dt=0.1) 
+# bp.backend.set('numba', dt=0.1) 
 from NeuronZoo import PCNeuron, PVNeuron, SSTNeuron, VIPNeuron
 from utils import SetConnectivity, trial_plot_pc
 

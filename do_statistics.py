@@ -126,7 +126,7 @@ def build_model(x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state='contr
 def run_trials(n_trials, x_s, x_d, x_i_pv, x_i_sst, x_i_vip, noise_strength, state, cond):
     PC_Sam = []; PV_Sam = []; SST_Sam=[]; VIP_Sam=[]
     for i in range(n_trials):
-        bp.base.clear_name_cache()
+        bp.math.clear_name_cache()
         print('simulating trail {:.0f}'.format(i)) 
         micro_net, pcs, pvs, ssts, vips = build_model(x_s, x_d, x_i_pv, x_i_sst, 
                                                       x_i_vip, noise_strength, state,
