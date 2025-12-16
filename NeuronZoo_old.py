@@ -15,6 +15,7 @@ class PCNeuron(bp.dyn.NeuGroup):
         super(PCNeuron, self).__init__(size, name='PC', **kwargs) 
         
         #parameters
+        self.size           =   size            # number of neurons
         self.tau            =   tau             # the rate time constant for PC neuron
         self.noise_strength =   noise_strength  # noise strength add to each neuron
         self.lambda_s       =   lambda_s        # the percentage of currents leadking away from soma
@@ -44,17 +45,18 @@ class PCNeuron(bp.dyn.NeuGroup):
         self.PV     =   None
         self.SST    =   None
         
-        self.integral = bp.odeint(method='exp_auto', f=self.derivative)
+        self.integral = bp.odeint(self.derivative, method='exp_auto')
         
-    @property    
-    def derivative(self):
-        dr_pc = lambda r_pc, t, I_total: (
-            -r_pc
-            + bm.where(I_total - self.theta_s < 0, 0, I_total - self.theta_s)
-        ) / self.tau
-        return bp.JointEq([dr_pc])
+        
+    def derivative(self, r_pc, t, I_total):    
+        I_total_thres = I_total - self.theta_s
+        I_total_thres = bm.where(I_total_thres < 0, 0, I_total_thres)
+        #I_total_thres = bm.activations.relu6(I_total_thres)
+        # I_total_thres[I_total_thres < 0] = 0
+        dr_pc = 1. / self.tau * (-r_pc + I_total_thres)
+        return dr_pc
     
-    def update(self):
+    def update(self, _t, _dt):
         #1, calculate the somatic inputs:
         I_S     =   self.x_s + bm.dot(self.W_pc_pv,self.PV.r_pv)
         
@@ -77,19 +79,20 @@ class PCNeuron(bp.dyn.NeuGroup):
         #4, calculate the total input coming from the dendrites, should be non-negative
         d_current = I_D + I_D0
         d_current = bm.where(d_current < 0, 0, d_current)
+        #d_current = bm.activations.relu6(d_current)
         # d_current[d_current<0] = 0
 
         #5, calculate the total input to the soma from generating firing rate
         
         I_total = (1-self.lambda_s)*I_S + self.lambda_d*d_current \
-            + self.noise_strength*self.rng.randn(self.num)
+            + bm.sqrt(self.tau/0.1)*self.noise_strength*self.rng.randn(self.num)
         
         self.I_S.value  = I_S
         self.I_D[:]  = I_D
         self.I_D0[:] = I_D0
         self.I_0.value  = I_0
         
-        self.r_pc.value = self.integral(self.r_pc, bp.share.load("t"), I_total)
+        self.r_pc.value = self.integral(self.r_pc, _t, I_total, _dt)
         
 class PVNeuron(bp.dyn.NeuGroup):
     
@@ -98,6 +101,7 @@ class PVNeuron(bp.dyn.NeuGroup):
         super(PVNeuron, self).__init__(size, name='PV', **kwargs)
         
         #parameters
+        self.size           =   size              # number of neurons
         self.tau            =   tau               # the GABAa time constant for PVs
         self.noise_strength =   noise_strength    # noise strength add to each neuron
         self.x_i            =   x_i               # external input to PVs
@@ -124,7 +128,8 @@ class PVNeuron(bp.dyn.NeuGroup):
         return dr_pv
     '''
 
-    def update(self):
+    
+    def update(self, _t, _dt):
         
         #calculate input from different cell type
         pc_input    =   bm.dot(self.W_pv_pc, self.PC.r_pc)
@@ -133,11 +138,12 @@ class PVNeuron(bp.dyn.NeuGroup):
         vip_input   =   bm.dot(self.W_pv_vip, self.VIP.r_vip)
         
         I_total     =   self.x_i + pc_input + pv_input + sst_input + vip_input \
-                        + self.noise_strength*self.rng.randn(self.num)
+                        + bm.sqrt(self.tau/0.1)*self.noise_strength*self.rng.randn(self.num)
         
-        r_pv        =   self.integral(self.r_pv, bp.share.load("t"), I_total)
+        r_pv        =   self.integral(self.r_pv, _t, I_total, _dt)
         
         r_pv = bm.where(r_pv < 0, 0, r_pv)
+        # r_pv[r_pv<0] = 0
 
         self.r_pv.value = r_pv
         
@@ -149,6 +155,7 @@ class SSTNeuron(bp.dyn.NeuGroup):
         super(SSTNeuron, self).__init__(size, name='SST', **kwargs)
         
         #parameters
+        self.size           =   size              # number of neurons
         self.tau            =   tau                 # the GABAa time constant for SSTs
         self.noise_strength =   noise_strength      # noise strength add to each neuron
         self.x_i            =   x_i                 # external input to SSTs
@@ -175,7 +182,7 @@ class SSTNeuron(bp.dyn.NeuGroup):
         return dr_sst
     '''
     
-    def update(self):
+    def update(self, _t, _dt):
         
         #calculate input from different cell type
         pc_input    =   bm.dot(self.W_sst_pc, self.PC.r_pc)
@@ -184,9 +191,9 @@ class SSTNeuron(bp.dyn.NeuGroup):
         vip_input   =   bm.dot(self.W_sst_vip, self.VIP.r_vip)        
         
         I_total     =   self.x_i + pc_input + pv_input + sst_input + vip_input \
-                        + self.noise_strength*self.rng.randn(self.num)
+                        + bm.sqrt(self.tau/0.1)*self.noise_strength*self.rng.randn(self.num)
         
-        r_sst       =   self.integral(self.r_sst, bp.share.load("t"), I_total)
+        r_sst       =   self.integral(self.r_sst, _t, I_total, _dt)
         
         r_sst = bm.where(r_sst < 0, 0, r_sst)
 
@@ -199,6 +206,7 @@ class VIPNeuron(bp.dyn.NeuGroup):
         super(VIPNeuron, self).__init__(size, name='VIP', **kwargs)
         
         #parameters
+        self.size           =   size                # number of neurons
         self.tau            =   tau                 # the GABAa time constant for VIPs
         self.noise_strength =   noise_strength      # noise strength add to each neuron
         self.x_i            =   x_i                 # external input to VIPs
@@ -226,7 +234,7 @@ class VIPNeuron(bp.dyn.NeuGroup):
             return dr_vip
         '''
     
-    def update(self):
+    def update(self, _t, _dt):
         
         #calculate input from different cell type
         pc_input    =   bm.dot(self.W_vip_pc, self.PC.r_pc)
@@ -235,9 +243,9 @@ class VIPNeuron(bp.dyn.NeuGroup):
         vip_input   =   bm.dot(self.W_vip_vip, self.r_vip)   
         
         I_total     =    self.x_i + pc_input + pv_input + sst_input + vip_input \
-                        + self.noise_strength*self.rng.randn(self.num)
+                        + bm.sqrt(self.tau/0.1)*self.noise_strength*self.rng.randn(self.num)
         
-        r_vip = self.integral(self.r_vip, bp.share.load("t"), I_total)
+        r_vip = self.integral(self.r_vip, _t, I_total, _dt)
         
         r_vip = bm.where(r_vip<0, 0, r_vip)
 

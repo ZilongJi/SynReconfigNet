@@ -17,6 +17,7 @@ from NeuronZoo import PCNeuron, PVNeuron, SSTNeuron, VIPNeuron
 from itertools import combinations
 
 bp.math.set_platform('cpu')
+
 seed=1234
 
 def build_model(Con_Stre, Con_Prob, cond, status):
@@ -37,11 +38,11 @@ def build_model(Con_Stre, Con_Prob, cond, status):
         if status == 'MD1' or status == 'Ctrl':
             x_s =   18.0*bm.ones(num_pc)
         else:
-            x_s =   16.0*bm.ones(num_pc)
+            x_s =   17.4*bm.ones(num_pc)
             
         x_d     =   5.0*bm.ones(num_pc)
         x_i_pv  =   3.1*bm.ones(num_pv)
-        x_i_sst =   2.0*bm.ones(num_sst)
+        x_i_sst =   1.9*bm.ones(num_sst)
         x_i_vip =   1.4*bm.ones(num_vip)
     elif cond=='Evoked':  
         if status == 'MD1' or status == 'Ctrl':
@@ -98,7 +99,7 @@ def build_model(Con_Stre, Con_Prob, cond, status):
     vips.PC = pcs; vips.PV = pvs; vips.SST = ssts
     
     #build the network
-    micro_net = bp.dyn.Network(pcs, pvs, ssts, vips)
+    micro_net = bp.Network(pcs, pvs, ssts, vips)
     
     return micro_net, pcs, pvs, ssts, vips
 
@@ -113,26 +114,25 @@ def get_meanfr(Con_Stre, Con_Prob, cond, status):
         the mean firing rate of 4 types of neurons: fpc, fpv, fsst, fvip
         Note: calculate the mean firing rate of the neurons with preferred stimulus
     '''
-    bp.base.clear_name_cache()
+    bp.math.clear_name_cache()
     print('simulating trail...')
     micro_net, pcs, pvs, ssts, vips = build_model(Con_Stre, Con_Prob, cond, status) 
     #reset the firing rates of different cell types
     pcs.r_pc[:] = 0.; pvs.r_pv[:] = 0.; ssts.r_sst[:] = 0.; vips.r_vip[:] = 0. 
-    runner = bp.dyn.DSRunner(micro_net,
-                             monitors=['PC.r_pc', 'PC.I_0',
-                                       'PV.r_pv', 'SST.r_sst',
-                                       'VIP.r_vip'],
-                             dt=0.1,
-                             numpy_mon_after_run=False,
-                             progress_bar=True)
+    runner = bp.DSRunner(micro_net,
+                        monitors=['PC.r_pc', 'PC.I_0',
+                                'PV.r_pv', 'SST.r_sst',
+                                'VIP.r_vip'],
+                        dt=0.1,
+                        numpy_mon_after_run=False)
     
     runner.run(duration=1000) 
     
 
-    fpc = np.mean(runner.mon['PC.r_pc'][-1,:int(pcs.size/4)])  #int(pcs.size/4) calculate the mean fr for the prefered neurons
-    fpv = np.mean(runner.mon['PV.r_pv'][-1,:int(pvs.size/4)])
-    fsst = np.mean(runner.mon['SST.r_sst'][-1,:int(ssts.size/4)])
-    fvip = np.mean(runner.mon['VIP.r_vip'][-1,:int(vips.size/4)])
+    fpc = np.mean(runner.mon['PC.r_pc'][-1,:int(pcs.size[0]/4)])  #int(pcs.size/4) calculate the mean fr for the prefered neurons
+    fpv = np.mean(runner.mon['PV.r_pv'][-1,:int(pvs.size[0]/4)])
+    fsst = np.mean(runner.mon['SST.r_sst'][-1,:int(ssts.size[0]/4)])
+    fvip = np.mean(runner.mon['VIP.r_vip'][-1,:int(vips.size[0]/4)])
     
     mean_fr = np.asarray([fpc,fpv,fsst,fvip])
 
@@ -222,6 +222,9 @@ def main(cond, status):
                 target_Stre[row, column] = MD_Stre[row, column]
                 target_Prob[row, column] = MD_Prob[row, column]
                 
+                synap_name = synap_name.split('_')[1]+'_'+synap_name.split('_')[0]
+                #Capotalize all letters
+                synap_name = synap_name.upper()
                 string += synap_name+'\n '
             #get activity based on target_Stre and target_Prob
             target_meanfr = get_meanfr(target_Stre, target_Prob, cond, status)
@@ -241,8 +244,8 @@ def main(cond, status):
 
 if __name__=='__main__':
     cond = 'Spont.'
-    #cond = 'Evoked'
-    status='MD4'
+    # cond = 'Evoked'
+    status='MD1'
     
     all_rp_name, all_rp_index = main(cond, status)
     

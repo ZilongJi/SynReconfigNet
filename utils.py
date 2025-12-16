@@ -250,143 +250,265 @@ def trial_plot_pc(name, pcs, numsamples=20):
     plt.savefig('./figures/'+name+'_pc.png')
     plt.savefig('./figures/EPS/'+name+'_pc.eps')
 
-def violoin_plot(ctrl1, md1, ctrl2, md4, cond, celltype):
-    """
-    violinplot with seaborn
-    """
-    ctrl1 = bm.as_numpy(ctrl1).flatten()
-    md1 = bm.as_numpy(md1).flatten()
-    ctrl2 = bm.as_numpy(ctrl2).flatten()
-    md4 = bm.as_numpy(md4).flatten()
+# def violoin_plot(ctrl1, md1, ctrl2, md4, cond, celltype):
+#     """
+#     violinplot with seaborn
+#     """
+#     ctrl1 = bm.as_numpy(ctrl1).flatten()
+#     md1 = bm.as_numpy(md1).flatten()
+#     ctrl2 = bm.as_numpy(ctrl2).flatten()
+#     md4 = bm.as_numpy(md4).flatten()
 
-    #regroup the data into dataframe
-    data = np.concatenate(
-        [[ctrl1, len(ctrl1)*['control vs. md1'], len(ctrl1)*['control']],
-         [md1, len(md1)*['control vs. md1'], len(md1)*['md']],
-         [ctrl2, len(ctrl2)*['control vs. md4'], len(ctrl2)*['control']],
-         [md4, len(md4)*['control vs. md4'], len(md4)*['md']]],
-        axis=1)
+#     #regroup the data into dataframe
+#     data = np.concatenate(
+#         [[ctrl1, len(ctrl1)*['control vs. md1'], len(ctrl1)*['control']],
+#          [md1, len(md1)*['control vs. md1'], len(md1)*['md']],
+#          [ctrl2, len(ctrl2)*['control vs. md4'], len(ctrl2)*['control']],
+#          [md4, len(md4)*['control vs. md4'], len(md4)*['md']]],
+#         axis=1)
     
-    df = pd.DataFrame(columns=['value', 'comparison', 'state'], data=data.T)
-    df['value'] = df['value'].astype(float)
+#     df = pd.DataFrame(columns=['value', 'comparison', 'state'], data=data.T)
+#     df['value'] = df['value'].astype(float)
 
-    plt.figure(figsize=(10,6))
-    custom_params = {"axes.spines.right": False, "axes.spines.top": False}
-    sns.set_theme(style="ticks", rc=custom_params)
-    sns.color_palette("flare", as_cmap=True)
-    bp = sns.violinplot(x="comparison", y="value", hue="state",
-                    data=df, split=True, inner='stick')
-    handles, labels = bp.get_legend_handles_labels()
-    plt.legend(handles[0:4], labels[0:4], bbox_to_anchor=(1.01, 0.7), loc='upper left', fontsize=20)
-    name = cond +' ('+ celltype+ ')'
-    plt.xlabel(name, fontname="Arial", size=20)
-    plt.ylabel('Firing rate of '+celltype + ' (Hz)', fontname="Arial", size=20)
-    plt.xticks(fontsize=20); plt.yticks(fontsize=20)        
+#     plt.figure(figsize=(10,6))
+#     custom_params = {"axes.spines.right": False, "axes.spines.top": False}
+#     sns.set_theme(style="ticks", rc=custom_params)
+#     sns.color_palette("flare", as_cmap=True)
+#     bp = sns.violinplot(x="comparison", y="value", hue="state",
+#                     data=df, split=True, inner='stick')
+#     handles, labels = bp.get_legend_handles_labels()
+#     plt.legend(handles[0:4], labels[0:4], bbox_to_anchor=(1.01, 0.7), loc='upper left', fontsize=20)
+#     name = cond +' ('+ celltype+ ')'
+#     plt.xlabel(name, fontname="Arial", size=20)
+#     plt.ylabel('Firing rate of '+celltype + ' (Hz)', fontname="Arial", size=20)
+#     plt.xticks(fontsize=20); plt.yticks(fontsize=20)        
     
-    #Perform the Mann-Whitney U rank test on two independent samples.
-    #_, P_ctrl_md1 = stats.mannwhitneyu(ctrl1, md1)
-    #_, P_ctrl_md4 = stats.mannwhitneyu(ctrl2, md4)
+#     #Perform the Mann-Whitney U rank test on two independent samples.
+#     #_, P_ctrl_md1 = stats.mannwhitneyu(ctrl1, md1)
+#     #_, P_ctrl_md4 = stats.mannwhitneyu(ctrl2, md4)
     
-    _, P_ctrl_md1 = stats.ttest_ind(ctrl1, md1)
-    _, P_ctrl_md4 = stats.ttest_ind(ctrl2, md4)
+#     _, P_ctrl_md1 = stats.ttest_ind(ctrl1, md1)
+#     _, P_ctrl_md4 = stats.ttest_ind(ctrl2, md4)
     
     
-    #barplot_annotate_brackets(num1, num2, data, center, height, yerr=None, dh=.05, barh=.05, fs=None, maxasterix=None
+#     #barplot_annotate_brackets(num1, num2, data, center, height, yerr=None, dh=.05, barh=.05, fs=None, maxasterix=None
     
-    plt.title('P value of Ctrl vs. MD1 {:.3f}, Ctrl vs. MD4 {:.3f}'.format(P_ctrl_md1, P_ctrl_md4), fontname="Arial", size=20)    
+#     plt.title('P value of Ctrl vs. MD1 {:.3f}, Ctrl vs. MD4 {:.3f}'.format(P_ctrl_md1, P_ctrl_md4), fontname="Arial", size=20)    
     
-    plt.tight_layout()
+#     plt.tight_layout()
     
-    plt.savefig('./figures/'+name+'_violin.png')
-    plt.savefig('./figures/EPS/'+name+'_violin.eps')       
+#     plt.savefig('./figures/'+name+'_violin.png')
+#     plt.savefig('./figures/EPS/'+name+'_violin.eps')       
+
+
+# def bar_plot(ctrl1, md1, ctrl2, md4, cond, celltype):
+#     """
+#     boxplot with standard error of the mean (SEM) 
+#     """    
+     
+#     #regroup the data into dataframe
+#     data = np.concatenate(
+#         [[ctrl1, len(ctrl1)*['control vs. md1'], len(ctrl1)*['control1']],
+#          [md1, len(md1)*['control vs. md1'], len(md1)*['md1']],
+#          [ctrl2, len(ctrl2)*['control vs. md4'], len(ctrl2)*['control4']],
+#          [md4, len(md4)*['control vs. md4'], len(md4)*['md4']]],
+#         axis=1)
+    
+#     df = pd.DataFrame(columns=['value', 'comparison', 'state'], data=data.T)
+#     df['value'] = df['value'].astype(float)
+    
+#     plt.figure(figsize=(10,4))
+#     sns.set_style('white')
+#     bp = sns.barplot(x='comparison', y='value', hue='state', data=df, 
+#                 palette='colorblind', ci=68, capsize=.15, linewidth=3)   
+#     bp = sns.stripplot(x='comparison', y='value', hue='state', data=df, jitter=0.25, 
+#                  size=10, alpha=0.5, edgecolor=sns.color_palette("hls", 4), linewidth=1, dodge=True)
+#     handles, labels = bp.get_legend_handles_labels()
+#     plt.legend(handles[0:4], labels[0:4], bbox_to_anchor=(1.01, 0.7), loc='upper left', fontsize=20)    
+#     name = cond +' ('+ celltype+ ')'
+#     plt.xlabel(name, size=20)
+#     plt.ylabel('Firing rate of '+celltype + ' (Hz)', size=20)
+#     plt.xticks(fontsize=20); plt.yticks(fontsize=20)
+    
+#     #Perform the Mann-Whitney U rank test on two independent samples.
+#     _, P_ctrl_md1 = stats.mannwhitneyu(ctrl1, md1)
+#     _, P_ctrl_md4 = stats.mannwhitneyu(ctrl2, md4)
+    
+    
+#     plt.title('P value of Ctrl vs. MD1 {:.3f}, Ctrl vs. MD4 {:.3f}'\
+#               .format(P_ctrl_md1, P_ctrl_md4), size=20)    
+    
+#     plt.tight_layout()
+    
+#     plt.savefig('./figures/'+name+'.png')
+#     plt.savefig('./figures/EPS/'+name+'.eps')        
+
+# def box_plot(ctrl1, md1, ctrl2, md4, cond, celltype):
+#     """
+#     ttest plot of ctrl vs. md1 & ctrl vs. md4
+#     """
+    
+#     #regroup the data into dataframe
+#     data = np.concatenate(
+#         [[ctrl1, len(ctrl1)*['control vs. md1'], len(ctrl1)*['control1']],
+#          [md1, len(md1)*['control vs. md1'], len(md1)*['md1']],
+#          [ctrl2, len(ctrl2)*['control vs. md4'], len(ctrl2)*['control4']],
+#          [md4, len(md4)*['control vs. md4'], len(md4)*['md4']]],
+#         axis=1)
+    
+#     df = pd.DataFrame(columns=['value', 'comparison', 'state'], data=data.T)
+#     df['value'] = df['value'].astype(float)
+    
+#     plt.figure(figsize=(10,8))
+    
+#     sns.set_style('white')
+    
+#     bp = sns.boxplot(x='comparison', y='value', hue='state', data=df, 
+#                 palette='colorblind', fliersize=0, linewidth=3)
+#     bp = sns.stripplot(x='comparison', y='value', hue='state', data=df, jitter=True, 
+#                  marker='o', alpha=0.9, color='grey', dodge=True)
+#     handles, labels = bp.get_legend_handles_labels()
+#     plt.legend(handles[0:4], labels[0:4], loc='upper center', fontsize=20)
+#     name = cond +' '+ celltype
+#     plt.xlabel(name, size=30)
+#     plt.ylabel('Firing rate of '+celltype + ' (Hz)', size=30)
+#     plt.xticks(fontsize=20); plt.yticks(fontsize=20)
+    
+#     #doing ttest This is a two-sided test for the null hypothesis that 2 
+#     #independent samples have identical average (expected) values. 
+#     #This test assumes that the populations have identical variances by default.
+#     P_ctrl_md1 = stats.ttest_ind(ctrl1, md1)[1]
+#     P_ctrl_md4 = stats.ttest_ind(ctrl2, md4)[1]
+    
+#     plt.title('P value of Ctrl vs. MD1 {:.3f}, Ctrl vs. MD4 {:.3f}'\
+#               .format(P_ctrl_md1, P_ctrl_md4), size=20)    
+    
+#     plt.tight_layout()
+    
+#     plt.savefig('./figures/'+name+'.png')
+#     plt.savefig('./figures/EPS/'+name+'.eps')
+
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from scipy import stats
+from matplotlib.ticker import MaxNLocator
+
+
+def _add_sig_bar(ax, x1, x2, y, h, text, fontsize=8, lw=1):
+    ax.plot([x1, x1, x2, x2], [y, y + h, y + h, y], linewidth=lw, color='k', clip_on=False)
+    ax.text((x1 + x2) / 2, y + h, text, ha='center', va='bottom', fontsize=fontsize)
 
 
 def bar_plot(ctrl1, md1, ctrl2, md4, cond, celltype):
     """
-    boxplot with standard error of the mean (SEM) 
-    """    
-     
-    #regroup the data into dataframe
-    data = np.concatenate(
-        [[ctrl1, len(ctrl1)*['control vs. md1'], len(ctrl1)*['control1']],
-         [md1, len(md1)*['control vs. md1'], len(md1)*['md1']],
-         [ctrl2, len(ctrl2)*['control vs. md4'], len(ctrl2)*['control4']],
-         [md4, len(md4)*['control vs. md4'], len(md4)*['md4']]],
-        axis=1)
-    
-    df = pd.DataFrame(columns=['value', 'comparison', 'state'], data=data.T)
-    df['value'] = df['value'].astype(float)
-    
-    plt.figure(figsize=(10,4))
-    sns.set_style('white')
-    bp = sns.barplot(x='comparison', y='value', hue='state', data=df, 
-                palette='colorblind', ci=68, capsize=.15, linewidth=3)   
-    bp = sns.stripplot(x='comparison', y='value', hue='state', data=df, jitter=0.25, 
-                 size=10, alpha=0.5, edgecolor=sns.color_palette("hls", 4), linewidth=1, dodge=True)
-    handles, labels = bp.get_legend_handles_labels()
-    plt.legend(handles[0:4], labels[0:4], bbox_to_anchor=(1.01, 0.7), loc='upper left', fontsize=20)    
-    name = cond +' ('+ celltype+ ')'
-    plt.xlabel(name, size=20)
-    plt.ylabel('Firing rate of '+celltype + ' (Hz)', size=20)
-    plt.xticks(fontsize=20); plt.yticks(fontsize=20)
-    
-    #Perform the Mann-Whitney U rank test on two independent samples.
-    _, P_ctrl_md1 = stats.mannwhitneyu(ctrl1, md1)
-    _, P_ctrl_md4 = stats.mannwhitneyu(ctrl2, md4)
-    
-    
-    plt.title('P value of Ctrl vs. MD1 {:.3f}, Ctrl vs. MD4 {:.3f}'\
-              .format(P_ctrl_md1, P_ctrl_md4), size=20)    
-    
-    plt.tight_layout()
-    
-    plt.savefig('./figures/'+name+'.png')
-    plt.savefig('./figures/EPS/'+name+'.eps')        
+    Bar plot (mean ± SEM) + scatter, 4 colours, with:
+      - integer-only y ticks (sparse)
+      - custom x positions: bars 1–2 close, 3–4 close, larger gap between 2 and 3
+      - significance brackets above (NR vs MD within 1d and within 4d)
+    """
 
-def box_plot(ctrl1, md1, ctrl2, md4, cond, celltype):
-    """
-    ttest plot of ctrl vs. md1 & ctrl vs. md4
-    """
-    
-    #regroup the data into dataframe
-    data = np.concatenate(
-        [[ctrl1, len(ctrl1)*['control vs. md1'], len(ctrl1)*['control1']],
-         [md1, len(md1)*['control vs. md1'], len(md1)*['md1']],
-         [ctrl2, len(ctrl2)*['control vs. md4'], len(ctrl2)*['control4']],
-         [md4, len(md4)*['control vs. md4'], len(md4)*['md4']]],
-        axis=1)
-    
-    df = pd.DataFrame(columns=['value', 'comparison', 'state'], data=data.T)
-    df['value'] = df['value'].astype(float)
-    
-    plt.figure(figsize=(10,8))
-    
-    sns.set_style('white')
-    
-    bp = sns.boxplot(x='comparison', y='value', hue='state', data=df, 
-                palette='colorblind', fliersize=0, linewidth=3)
-    bp = sns.stripplot(x='comparison', y='value', hue='state', data=df, jitter=True, 
-                 marker='o', alpha=0.9, color='grey', dodge=True)
-    handles, labels = bp.get_legend_handles_labels()
-    plt.legend(handles[0:4], labels[0:4], loc='upper center', fontsize=20)
-    name = cond +' '+ celltype
-    plt.xlabel(name, size=30)
-    plt.ylabel('Firing rate of '+celltype + ' (Hz)', size=30)
-    plt.xticks(fontsize=20); plt.yticks(fontsize=20)
-    
-    #doing ttest This is a two-sided test for the null hypothesis that 2 
-    #independent samples have identical average (expected) values. 
-    #This test assumes that the populations have identical variances by default.
-    P_ctrl_md1 = stats.ttest_ind(ctrl1, md1)[1]
-    P_ctrl_md4 = stats.ttest_ind(ctrl2, md4)[1]
-    
-    plt.title('P value of Ctrl vs. MD1 {:.3f}, Ctrl vs. MD4 {:.3f}'\
-              .format(P_ctrl_md1, P_ctrl_md4), size=20)    
-    
+    # -----------------------------
+    # Dataframe
+    # -----------------------------
+    groups = ['NR 1d', 'MD 1d', 'NR 4d', 'MD 4d']
+    values = np.concatenate([ctrl1, md1, ctrl2, md4]).astype(float)
+    group_labels = (len(ctrl1) * ['NR 1d'] +
+                    len(md1)   * ['MD 1d'] +
+                    len(ctrl2) * ['NR 4d'] +
+                    len(md4)   * ['MD 4d'])
+    df = pd.DataFrame({'value': values, 'group': group_labels})
+    df['group'] = pd.Categorical(df['group'], categories=groups, ordered=True)
+
+    # -----------------------------
+    # Colours
+    # -----------------------------
+    palette = {
+        'NR 1d': '#9899a0',
+        'MD 1d': '#80a8cc',
+        'NR 4d': '#4b4c4e',
+        'MD 4d': '#357788'
+    }
+
+    # -----------------------------
+    # Custom x positions (grouped spacing)
+    # -----------------------------
+    x_pos = {'NR 1d': 0.00, 'MD 1d': 0.60, 'NR 4d': 1.5, 'MD 4d': 2.10}
+
+    means = df.groupby('group', observed=True)['value'].mean().reindex(groups).values
+    sems  = df.groupby('group', observed=True)['value'].sem().reindex(groups).values
+
+    # -----------------------------
+    # Plot
+    # -----------------------------
+    plt.figure(figsize=(3, 3), dpi=300)
+    custom_params = {"axes.spines.right": False, "axes.spines.top": False}
+    sns.set_theme(style="ticks", rc=custom_params)
+    ax = plt.gca()
+
+    # Bars + SEM
+    bar_width = 0.50
+    xs = [x_pos[g] for g in groups]
+    ax.bar(
+        xs, means, yerr=sems,
+        width=bar_width,
+        capsize=3,
+        color=[palette[g] for g in groups],
+        edgecolor='none'
+    )
+
+    # Scatter with jitter (in x-units)
+    rng = np.random.default_rng(0)  # deterministic jitter
+    jitter = 0.10
+    for g in groups:
+        y = df.loc[df['group'] == g, 'value'].to_numpy(dtype=float)
+        x = x_pos[g] + rng.uniform(-jitter, jitter, size=y.size)
+        ax.scatter(x, y, s=20, c='k', alpha=0.2, linewidths=0)
+
+    name = f"{cond} ({celltype})"
+    ax.set_xlabel("")
+    ax.set_ylabel(f"{cond} activity of {celltype} (Hz)", fontsize=10)
+
+    # X ticks at custom positions
+    ax.set_xticks(xs)
+    ax.set_xticklabels(groups, fontsize=8, rotation=45)
+
+    # Integer-only, sparse y ticks
+    ax.yaxis.set_major_locator(MaxNLocator(nbins=4, integer=True))
+    ax.tick_params(axis='y', labelsize=8)
+
+    # -----------------------------
+    # Stats
+    # -----------------------------
+    _, P_ctrl_md1 = stats.mannwhitneyu(ctrl1, md1, alternative='two-sided')
+    _, P_ctrl_md4 = stats.mannwhitneyu(ctrl2, md4, alternative='two-sided')
+    print(f"{name} - P value of NR vs. MD (1d): {P_ctrl_md1:.3f}, NR vs. MD (4d): {P_ctrl_md4:.3f}")
+
+    # -----------------------------
+    # Significance brackets
+    # -----------------------------
+    y_min, y_max = ax.get_ylim()
+    y_range = (y_max - y_min) if (y_max - y_min) > 0 else 1.0
+    base_y = y_max + 0.05 * y_range
+    h = 0.03 * y_range
+    step = 0.10 * y_range
+
+    if P_ctrl_md1 < 0.05:
+        _add_sig_bar(ax, x_pos['NR 1d'], x_pos['MD 1d'], base_y, h, f"p={P_ctrl_md1:.2e}", fontsize=8, lw=1)
+        base_y += step
+
+    if P_ctrl_md4 < 0.05:
+        _add_sig_bar(ax, x_pos['NR 4d'], x_pos['MD 4d'], base_y, h, f"p={P_ctrl_md4:.2e}", fontsize=8, lw=1)
+        base_y += step
+
+    ax.set_ylim(y_min, base_y + h + 0.05 * y_range)
+
     plt.tight_layout()
-    
-    plt.savefig('./figures/'+name+'.png')
-    plt.savefig('./figures/EPS/'+name+'.eps')
+    plt.savefig(f'./figures/{name}_bar_scatter.pdf')
+    plt.close()
+
+
 
 def barplot_annotate_brackets(num1, num2, data, center, height, yerr=None, dh=.05, barh=.05, fs=None, maxasterix=None):
     """ 
@@ -1011,73 +1133,164 @@ def correlation_change_matrixplot(DiffPerChange_matrix, status, synapList):
     plt.savefig('./figures/CorrDiffMatrixPerChange_'+status+'.png')
     plt.savefig('./figures/EPS/CorrDiffMatrixPerChange_'+status+'.eps') 
     
+# def plot_activity_reproduce_index(name, rp_index, status):
+#     """
+#     matrix plot of the activity reproducing index 
+#     """
+    
+#     Num = len(name)
+    
+#     #correlation plot
+#     if status=='MD1':
+#         fig, ax = plt.subplots(figsize=(3,3), dpi=300)
+#     else:
+#         fig, ax = plt.subplots(figsize=(6,3), dpi=300)
+#     ax.set_yticks(np.arange(0,4,1))
+#     ax.set_yticklabels(['PC', 'PV', 'SST', 'VIP'], fontsize=10)
+#     ax.set_xticks(np.arange(0,Num,1))
+#     ax.set_xticklabels(name, fontsize=10)     
+#     plt.vlines(x=np.arange(0, Num)+0.5, ymin=np.full(Num, 0)-0.5, ymax=np.full(Num, 4)-0.5, color="white")
+#     plt.hlines(y=np.arange(0, 4)+0.5, xmin=np.full(4, 0)-0.5, xmax=np.full(4, Num)-0.5, color="white")    
+    
+    
+#     camp_reverse = plt.cm.get_cmap('RdBu_r')
+#     if status=='MD1':
+#         plt.imshow(rp_index.T, cmap=camp_reverse, vmin=-0.17, vmax=0.17)
+#         # plt.imshow(rp_index.T, cmap=camp_reverse, aspect=0.6, vmin=2*np.min(rp_index), vmax=-2*np.min(rp_index))
+#     else:
+#         plt.imshow(rp_index.T, cmap=camp_reverse, aspect=0.4, vmin=np.min(rp_index), vmax=-np.min(rp_index))
+
+#     cb = plt.colorbar(orientation='horizontal', shrink=0.3, pad=0.3)    
+#     cb.ax.xaxis.set_ticks_position("top")
+#     cb.ax.tick_params(labelsize=10)
+#     # plt.tight_layout()
+    
+#     plt.savefig('./figures/reproduce_index_'+status+'.pdf')
+#     # plt.savefig('./figures/EPS/reproduce_index_'+status+'.eps')  
+    
+#     #correlation plot
+#     if status=='MD1':
+#         fig, ax = plt.subplots(figsize=(3,3), dpi=300)
+#     else:
+#         fig, ax = plt.subplots(figsize=(6,3), dpi=300)
+#     ax.set_xticks(np.arange(0,Num,1)+0.5)
+#     ax.set_xticklabels(name, fontsize=10)     
+    
+#     Corr = []
+#     for i in range(Num):
+#         corrvalue = np.corrcoef(rp_index[i,:], rp_index[-1,:])[0,1]
+#         Corr.append(corrvalue)
+        
+#     plt.plot(np.arange(Num)+0.5, Corr, 'o-', linewidth=2, markersize=10, color='#009FB9')
+#     plt.ylabel('Reproducing Idx', fontsize=10)
+#     plt.xlim([0,Num])
+    
+#     sns.despine()
+    
+#     plt.tight_layout()
+    
+#     plt.savefig('./figures/reproduce_index_correlation_'+status+'.pdf')
+#     # plt.savefig('./figures/EPS/reproduce_index_correlation_'+status+'.eps')      
+
 def plot_activity_reproduce_index(name, rp_index, status):
     """
-    matrix plot of the activity reproducing index 
+    Single figure (2×1):
+      - Top: correlation plot (no x tick labels)
+      - Bottom: heatmap (with x tick labels)
+    Fixes x-tick alignment by using imshow's default centres at x = 0..Num-1.
     """
-    
+
     Num = len(name)
-    
-    fig, ax = plt.subplots(figsize=(20,10), dpi=100)
-    ax.set_yticks(np.arange(0,4,1))
-    ax.set_yticklabels(['PC', 'PV', 'SST', 'VIP'], fontsize=20)
-    ax.set_xticks(np.arange(0,Num,1))
-    ax.set_xticklabels(name, fontsize=25)     
-    plt.vlines(x=np.arange(0, Num)+0.5, ymin=np.full(Num, 0)-0.5, ymax=np.full(Num, 4)-0.5, color="white")
-    plt.hlines(y=np.arange(0, 4)+0.5, xmin=np.full(4, 0)-0.5, xmax=np.full(4, Num)-0.5, color="white")    
-    
-    
-    camp_reverse = plt.cm.get_cmap('RdBu_r')
-    if status=='MD1':
-        plt.imshow(rp_index.T, cmap=camp_reverse, aspect=0.6, vmin=-0.46, vmax=0.46)
+    x = np.arange(Num)
+
+    # -----------------------------
+    # Figure + axes
+    # -----------------------------
+    if status == 'MD1':
+        fig, (ax_top, ax_bot) = plt.subplots(
+            2, 1, figsize=(3, 6), dpi=300,
+            sharex=True,
+            gridspec_kw={'height_ratios': [2, 3]}
+        )
     else:
-        plt.imshow(rp_index.T, cmap=camp_reverse, aspect=0.6, vmin=np.min(rp_index), vmax=-np.min(rp_index))
-    '''
-    ax_divider = make_axes_locatable(ax)
-    cax = ax_divider.append_axes("top", size="2%")
-    cb = plt.colorbar(im, cax=cax, orientation="horizontal")
-    '''
-    cb = plt.colorbar(orientation='horizontal', shrink=0.5)    
-    cb.ax.xaxis.set_ticks_position("top")
-    cb.ax.tick_params(labelsize=20)
-    plt.tight_layout()
-    
-    plt.savefig('./figures/reproduce_index_'+status+'.png')
-    plt.savefig('./figures/EPS/reproduce_index_'+status+'.eps')  
-    
-    #correlation plot
-    if status=='MD1':
-        fig, ax = plt.subplots(figsize=(20,12), dpi=100)
-    else:
-        fig, ax = plt.subplots(figsize=(20,6), dpi=100)
-    ax.set_xticks(np.arange(0,Num,1)+0.5)
-    ax.set_xticklabels(name, fontsize=25)     
-    
+        fig, (ax_top, ax_bot) = plt.subplots(
+            2, 1, figsize=(6, 6), dpi=300,
+            sharex=True,
+            gridspec_kw={'height_ratios': [2, 3]}
+        )
+
+    # -----------------------------
+    # Top: correlation plot
+    # -----------------------------
     Corr = []
     for i in range(Num):
-        corrvalue = np.corrcoef(rp_index[i,:], rp_index[-1,:])[0,1]
-        Corr.append(corrvalue)
-        
-    plt.plot(np.arange(Num)+0.5, Corr, 'o-', linewidth=5, markersize=20)
-    plt.ylabel('Correlation coefficient', fontsize=25)
-    plt.xlim([0,Num])
-    
+        Corr.append(np.corrcoef(rp_index[i, :], rp_index[-1, :])[0, 1])
+
+    ax_top.plot(x, Corr, 'o-', linewidth=2, markersize=8, color='#009FB9')
+    ax_top.set_ylabel('Reproducing index', fontsize=12)
+
+    # match heatmap coordinate frame
+    ax_top.set_xlim([-0.5, Num - 0.5])
+
+    # no x tick labels on top
+    ax_top.set_xticks(x)
+    ax_top.set_xticklabels([])
+    ax_top.tick_params(axis='y', labelsize=12)
+    sns.despine(ax=ax_top)
+
+    # -----------------------------
+    # Bottom: heatmap
+    # -----------------------------
+    ax_bot.set_yticks(np.arange(4))
+    ax_bot.set_yticklabels(['PC', 'PV', 'SST', 'VIP'], fontsize=12)
+
+    ax_bot.set_xticks(x)
+    ax_bot.set_xticklabels(name, fontsize=12)
+
+    # grid lines at cell boundaries
+    ax_bot.vlines(x=x[:-1] + 0.5, ymin=-0.5, ymax=3.5, color="white")
+    ax_bot.hlines(y=np.arange(4) + 0.5, xmin=-0.5, xmax=Num - 0.5, color="white")
+
+    cmap = plt.cm.get_cmap('RdBu_r')
+    if status == 'MD1':
+        im = ax_bot.imshow(rp_index.T, cmap=cmap, aspect='auto', vmin=-np.max(np.abs(rp_index)), vmax=np.max(np.abs(rp_index)))
+    else:
+        im = ax_bot.imshow(
+            rp_index.T,
+            cmap=cmap,
+             aspect='auto',
+            vmin=np.min(rp_index),
+            vmax=-np.min(rp_index)
+        )
+
+    from matplotlib.ticker import ScalarFormatter
+
+    cb = fig.colorbar(im, ax=ax_bot, orientation='horizontal', shrink=0.7, pad=0.35)
+    cb.ax.xaxis.set_ticks_position("top")
+    cb.ax.tick_params(labelsize=12)
+
+    # scientific notation for colourbar ticks
+    formatter = ScalarFormatter(useMathText=True)
+    formatter.set_scientific(True)
+    formatter.set_powerlimits((0, 0))   # always use scientific notation
+    cb.ax.xaxis.set_major_formatter(formatter)
+
     plt.tight_layout()
-    
-    '''
-    ax_divider = make_axes_locatable(ax)
-    cax = ax_divider.append_axes("top", size="2%")
-    cb = plt.colorbar(im, cax=cax, orientation="horizontal")
-    '''
-    
-    plt.savefig('./figures/reproduce_index_correlation_'+status+'.png')
-    plt.savefig('./figures/EPS/reproduce_index_correlation_'+status+'.eps')      
+    plt.savefig(f'./figures/reproduce_index_combined_{status}.pdf')
+    plt.close(fig)
+
+
+
+
+
+
+
     
 def synaptic_ranking_plot(DiffPerChange, SynapName, cond):
     """
     synaptic ranking of 13 synapses
     """
-    fig, ax = plt.subplots(figsize=(10,13), dpi=100)
+    fig, ax = plt.subplots(figsize=(3,4), dpi=300)
     
     column_mean = np.mean(DiffPerChange, axis=1)
     column_std = np.std(DiffPerChange, axis=1)
@@ -1089,16 +1302,22 @@ def synaptic_ranking_plot(DiffPerChange, SynapName, cond):
     
     
     X = np.arange(1,len(SynapName)+1,1)
-    ax.barh(X, column_mean.T, yerr=column_std.T, align='center', alpha=0.5, ecolor='black', capsize=10)
+    ax.barh(X, column_mean.T, yerr=column_std.T, align='center', alpha=0.8, ecolor='black', capsize=10, color='#009FB9')
     ax.set_yticks(X)
-    ax.set_yticklabels(SynapName, rotation=0, ha='right', fontsize=40)
-    ax.set_xlabel('Synaptic contribution', fontsize=40)
-    plt.xticks(fontsize=20)
+    ax.set_yticklabels(SynapName, rotation=0, ha='right', fontsize=12)
+    plt.xticks(fontsize=8)
     plt.ticklabel_format(axis="x", style="sci", scilimits=(0,0))
     
+    ax.set_xlabel('Synaptic contribution index', fontsize=12, labelpad=12)
+    ax.xaxis.get_offset_text().set_fontsize(10)
+    ax.xaxis.get_offset_text().set_y(-0.12)
+    
+    sns.despine()
+    
     plt.tight_layout()
-    plt.savefig('./figures/SynapticRanking_'+cond+'.png')
-    plt.savefig('./figures/EPS/SynapticRanking_'+cond+'.eps')    
+    # plt.savefig('./figures/SynapticRanking_'+cond+'.png')
+    plt.savefig('./figures/SynapticRanking_'+cond+'.pdf')
+    # plt.savefig('./figures/EPS/SynapticRanking_'+cond+'.eps')    
     
     
     

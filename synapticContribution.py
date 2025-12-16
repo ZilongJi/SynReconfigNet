@@ -85,7 +85,7 @@ def build_model(Con_Stre, Con_Prob, cond):
     vips.PC = pcs; vips.PV = pvs; vips.SST = ssts
     
     #build the network
-    micro_net = bp.dyn.Network(pcs, pvs, ssts, vips)
+    micro_net = bp.Network(pcs, pvs, ssts, vips)
     
     return micro_net, pcs, pvs, ssts, vips
 
@@ -100,12 +100,12 @@ def get_mean_fr(Con_Stre, Con_Prob, cond):
         the mean firing rate of 4 types of neurons: fpc, fpv, fsst, fvip
         Note: calculate the mean firing rate of the neurons with preferred stimulus
     '''
-    bp.base.clear_name_cache()
+    bp.math.clear_name_cache()
     print('simulating trail...')
     micro_net, pcs, pvs, ssts, vips = build_model(Con_Stre, Con_Prob, cond) 
     #reset the firing rates of different cell types
     pcs.r_pc[:] = 0.; pvs.r_pv[:] = 0.; ssts.r_sst[:] = 0.; vips.r_vip[:] = 0. 
-    runner = bp.dyn.DSRunner(micro_net,
+    runner = bp.DSRunner(micro_net,
                              monitors=['PC.r_pc', 'PC.I_0',
                                        'PV.r_pv', 'SST.r_sst',
                                        'VIP.r_vip'],
@@ -114,10 +114,10 @@ def get_mean_fr(Con_Stre, Con_Prob, cond):
                              progress_bar=True)
     
     runner.run(duration=1000)    
-    fpc = np.mean(runner.mon['PC.r_pc'][-1,:int(pcs.size/4)])  #int(pcs.size/4) calculate the mean fr for the prefered neurons
-    fpv = np.mean(runner.mon['PV.r_pv'][-1,:int(pvs.size/4)])
-    fsst = np.mean(runner.mon['SST.r_sst'][-1,:int(ssts.size/4)])
-    fvip = np.mean(runner.mon['VIP.r_vip'][-1,:int(vips.size/4)])
+    fpc = np.mean(runner.mon['PC.r_pc'][-1,:int(pcs.size[0]/4)])  #int(pcs.size/4) calculate the mean fr for the prefered neurons
+    fpv = np.mean(runner.mon['PV.r_pv'][-1,:int(pvs.size[0]/4)])
+    fsst = np.mean(runner.mon['SST.r_sst'][-1,:int(ssts.size[0]/4)])
+    fvip = np.mean(runner.mon['VIP.r_vip'][-1,:int(vips.size[0]/4)])
     
     return fpc, fpv, fsst, fvip
 
