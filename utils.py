@@ -340,11 +340,11 @@ def bar_plot(ctrl1, md1, ctrl2, md4, cond, celltype):
 
     # X ticks at custom positions
     ax.set_xticks(xs)
-    ax.set_xticklabels(groups, fontsize=8, rotation=45)
+    ax.set_xticklabels(groups, fontsize=10, rotation=45)
 
     # Integer-only, sparse y ticks
     ax.yaxis.set_major_locator(MaxNLocator(nbins=4, integer=True))
-    ax.tick_params(axis='y', labelsize=8)
+    ax.tick_params(axis='y', labelsize=10)
 
     # -----------------------------
     # Stats
@@ -362,13 +362,50 @@ def bar_plot(ctrl1, md1, ctrl2, md4, cond, celltype):
     h = 0.03 * y_range
     step = 0.10 * y_range
 
-    if P_ctrl_md1 < 0.05:
-        _add_sig_bar(ax, x_pos['NR 1d'], x_pos['MD 1d'], base_y, h, f"p={P_ctrl_md1:.2e}", fontsize=8, lw=1)
+    def format_p(p):
+        if p < 0.001:
+            return "p<0.001"
+        elif p < 0.05:
+            return f"p={p:.3f}"   # e.g. 0.0027
+        else:
+            return None
+
+    p1_text = format_p(P_ctrl_md1)
+    if p1_text is not None:
+        _add_sig_bar(
+            ax,
+            x_pos['NR 1d'],
+            x_pos['MD 1d'],
+            base_y,
+            h,
+            p1_text,
+            fontsize=10,
+            lw=1
+        )
         base_y += step
 
-    if P_ctrl_md4 < 0.05:
-        _add_sig_bar(ax, x_pos['NR 4d'], x_pos['MD 4d'], base_y, h, f"p={P_ctrl_md4:.2e}", fontsize=8, lw=1)
+    p4_text = format_p(P_ctrl_md4)
+    if p4_text is not None:
+        _add_sig_bar(
+            ax,
+            x_pos['NR 4d'],
+            x_pos['MD 4d'],
+            base_y,
+            h,
+            p4_text,
+            fontsize=10,
+            lw=1
+        )
         base_y += step
+
+
+    # if P_ctrl_md1 < 0.05:
+    #     _add_sig_bar(ax, x_pos['NR 1d'], x_pos['MD 1d'], base_y, h, f"p={P_ctrl_md1:.2e}", fontsize=10, lw=1)
+    #     base_y += step
+
+    # if P_ctrl_md4 < 0.05:
+    #     _add_sig_bar(ax, x_pos['NR 4d'], x_pos['MD 4d'], base_y, h, f"p={P_ctrl_md4:.2e}", fontsize=10, lw=1)
+    #     base_y += step
 
     ax.set_ylim(y_min, base_y + h + 0.05 * y_range)
 
