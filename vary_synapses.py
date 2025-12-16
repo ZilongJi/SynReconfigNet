@@ -16,8 +16,10 @@ import pickle
 import brainpy as bp
 import numpy as np
 from utils import SetConnectivity, slope_plot, percentage_plot, slopewithshadow_plot, slope_rank_plot, synaptic_contribution_plot
-bp.backend.set('numpy', dt=0.1)
+
 from NeuronZoo import PCNeuron, PVNeuron, SSTNeuron, VIPNeuron 
+
+seed = 0
 
 def build_model(Con_Stre, cond='spont'):
     #%%initialize the hyper-parameters  
@@ -65,15 +67,15 @@ def build_model(Con_Stre, cond='spont'):
 
     #%% initialize the neuron class and build the network
     pcs = PCNeuron(num_pc, tau_pc, noise_strength, lambda_s, lambda_d, x_s, x_d, c, theta_s, 
-                   theta_c, W_pc_pv, W_pc_pc, W_pc_sst, monitors=['r_pc', 'I_0'])
+                   theta_c, W_pc_pv, W_pc_pc, W_pc_sst, seed) #, monitors=['r_pc', 'I_0']
     pvs = PVNeuron(num_pv, tau_pv, noise_strength, x_i_pv, W_pv_pc, W_pv_pv, W_pv_sst, W_pv_vip,
-                   monitors=['r_pv'])   
+                   seed)   #, monitors=['r_pv']
     
     ssts = SSTNeuron(num_sst, tau_sst, noise_strength, x_i_sst, W_sst_pc, W_sst_pv, W_sst_sst, 
-                     W_sst_vip, monitors=['r_sst'])
+                     seed, W_sst_vip) #, monitors=['r_sst']
     
     vips = VIPNeuron(num_vip, tau_vip, noise_strength, xi_i_vip, W_vip_pc, W_vip_pv, W_vip_sst, 
-                     W_vip_vip, monitors=['r_vip']) 
+                     W_vip_vip, seed) #, monitors=['r_vip']
     
     pcs.PV = pvs; pcs.SST = ssts 
     pvs.PC = pcs; pvs.SST = ssts; pvs.VIP = vips
