@@ -15,7 +15,7 @@ import brainpy as bp
 import numpy as np
 import brainpy.math as bm
 from NeuronZoo import PCNeuron, PVNeuron, SSTNeuron, VIPNeuron
-from utils import SetConnectivity, violoin_plot, trial_plot_pc
+from utils import SetConnectivity, trial_plot_pc
 
 bp.math.set_platform('cpu')
 rngseed=123
@@ -142,7 +142,7 @@ def build_model(noise_strength, state='control', cond='Spont.'):
     vips.PC = pcs; vips.PV = pvs; vips.SST = ssts
     
     #build the network
-    micro_net = bp.dyn.Network(pcs, pvs, ssts, vips)
+    micro_net = bp.Network(pcs, pvs, ssts, vips)
     
     return micro_net, pcs, pvs, ssts, vips
 
@@ -150,14 +150,14 @@ def build_model(noise_strength, state='control', cond='Spont.'):
 def visualize_dynamics(cond):
     state='control'
     noise_strength = 0.5
-    bp.base.clear_name_cache()
+    bp.math.clear_name_cache()
     
     micro_net, pcs, pvs, ssts, vips = build_model(noise_strength, state, cond)
 
     #reset the firing rates of different cell types
     pcs.r_pc[:] = 0.; pvs.r_pv[:] = 0.; ssts.r_sst[:] = 0.; vips.r_vip[:] = 0.  
 
-    runner = bp.dyn.DSRunner(micro_net,
+    runner = bp.DSRunner(micro_net,
                              monitors=['PC.r_pc', 'PC.I_0',
                                        'PV.r_pv', 'SST.r_sst',
                                        'VIP.r_vip'],
